@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
   <name>serial</name>
   <version>1.2.1</version>
   <description>
@@ -20,6 +20,15 @@
   <author email="ash.gti@gmail.com">John Harrison</author>
 
   <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>rospy</build_export_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>rospy</exec_depend>
+
+  <depend>can_host_msgs</depend>
+  <depend>geometry_msgs</depend>
 
   <test_depend>boost</test_depend>
 

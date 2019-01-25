@@ -2,7 +2,28 @@ cmake_minimum_required(VERSION 2.8.3)
 project(serial)
 
 # Find catkin
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED
+    roscpp
+    rospy
+    geometry_msgs
+    can_host_msgs
+)
+
+catkin_package(
+  CATKIN_DEPENDS roscpp rospy
+  DEPENDS system_lib
+)
+
+###########
+## Build ##
+###########
+
+## Specify additional locations of header files
+## Your package locations should be listed before other locations
+include_directories(
+    ros
+    ${catkin_INCLUDE_DIRS}
+)
 
 if(APPLE)
     find_library(IOKIT_LIBRARY IOKit)
@@ -60,6 +81,11 @@ endif()
 add_executable(serial_example examples/serial_example.cc)
 add_dependencies(serial_example ${PROJECT_NAME})
 target_link_libraries(serial_example ${PROJECT_NAME})
+
+## Uncomment for example
+add_executable(serial_node ros/serial_node.cpp ros/UartComm.cpp)
+add_dependencies(serial_node ${PROJECT_NAME})
+target_link_libraries(serial_node ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 ## Include headers
 include_directories(include)
