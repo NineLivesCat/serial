@@ -38,22 +38,25 @@ int main(int argc, char **argv)
 
     serial::Serial serial_host(port, baud, timeout_sync);
     if(serial_host.isOpen())
+    {
+        serial_host.flush();
         ROS_INFO("Connected to port %s", port);
+    }
 
     UartComm comm(nh, &serial_host);
-    ros::Publisher gimbalInfo_pub =
-        nh.advertise<can_host_msgs::gimbalInfo>("/can_host/gimbal_info", 100);
-    ros::Subscriber gimbalCmd_sub = nh.subscribe("/RM_gimbal/control",100,
+    comm.gimbalInfo_pub = nh.advertise<rm_vehicle_msgs::gimbalInfo>("/rm_vehicle/gimbal_info", 10);
+    comm.RC_pub = nh.advertise<rm_vehicle_msgs::RC>("/rm_vehicle/RC", 10);
+
+    ros::Subscriber gimbalCmd_sub = nh.subscribe("/RM_gimbal/control",10,
         &UartComm::gimbalCmdCallback, &comm);
 
     uint8_t rx_buffer[max_len],
             tx_buffer[max_len];
     size_t  rx_size;
-    uint8_t rx_mode = 0; //0_sync, 1_rx
 
     while (ros::ok())
     {
-        if(rx_mode == 0)//synchonization
+        if(comm.inSyncMode())//synchonization
         {
             uint8_t length = comm.packSyncSeq(tx_buffer, false);
             serial_host.write(tx_buffer, length);
@@ -64,27 +67,29 @@ int main(int argc, char **argv)
                 {
                     comm.packSyncSeq(tx_buffer, true);
                     serial_host.write(tx_buffer, length);
-                    rx_mode = 1;//Do something
+                    serial_host.flush();
+                    comm.toggleRXMode();
                 }
             }
             else
                 ROS_WARN("Timestamp sync unsuccessful, check UART connection");
 
-            comm.processGimbalInfo(rx_buffer, gimbalInfo_pub, false);
+            comm.processGimbalInfo(rx_buffer, false);
             ros::Duration(0.01).sleep();
         }
-        else if(rx_mode == 1)
+        else
         {
             uint8_t length = sizeof(uart_header_t)+
-                    sizeof(gimbal_info_t)+sizeof(uart_crc_t);
+                    sizeof(uart_gimbal_info_t)+sizeof(uart_crc_t);
             rx_size = serial_host.read(rx_buffer, length);
             if(rx_size == length)
-                comm.processGimbalInfo(rx_buffer, gimbalInfo_pub, true);
+                comm.processGimbalInfo(rx_buffer, true);
 
             if(comm.check_timeout()) //Switch to sync mode
             {
                 ROS_WARN("Connection lost with device, trying re-connection...");
-                rx_mode = 0;
+                serial_host.flush();
+                comm.toggleSyncMode();
             }
         }
         ros::spinOnce();

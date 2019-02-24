@@ -27,7 +27,7 @@
   <exec_depend>roscpp</exec_depend>
   <exec_depend>rospy</exec_depend>
 
-  <depend>can_host_msgs</depend>
+  <depend>rm_vehicle_msgs</depend>
   <depend>geometry_msgs</depend>
 
   <test_depend>boost</test_depend>

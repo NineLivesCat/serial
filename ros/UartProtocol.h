@@ -45,30 +45,35 @@ typedef struct
 typedef struct
 {
     uint32_t timeStamp_32;
-} __attribute__((packed)) heartbeat_t;
+} __attribute__((packed)) uart_heartbeat_t;
 
 typedef struct
 {
     uint16_t timeStamp_16;
+    uint8_t  bullet_speed : 5;
+    uint8_t  cv_mode      : 2;
+    uint8_t  rc_cmd       : 1;
     int16_t  yaw;
     int16_t  pitch;
     int16_t  gimbal_pitch_angle;
     int16_t  ang_vel[3];
-} __attribute__((packed)) gimbal_info_t;
+} __attribute__((packed)) uart_gimbal_info_t;
 
 typedef struct
 {
     uint16_t timeStamp_16;
     int16_t  yaw_velCmd;
     int16_t  pitch_velCmd;
-    uint8_t  ctrl_mode;
+    uint8_t  shootMode   : 3;
+    uint8_t  valid       : 1;
+    uint8_t  mode_reserve: 4;
     uint8_t  reserve;
-} __attribute__((packed)) gimbal_cmd_t;
+} __attribute__((packed)) uart_gimbal_cmd_t;
 
 typedef struct
 {
-    heartbeat_t    heartbeat;
-    gimbal_info_t  gimbal_info;
+    uart_heartbeat_t    heartbeat;
+    uart_gimbal_info_t  gimbal_info;
 } __attribute__((packed)) uart_protocol_t;
 
 #endif

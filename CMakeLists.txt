@@ -1,12 +1,15 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(serial)
 
+add_compile_options(-std=c++11)
+set(CMAKE_BUILD_TYPE Release)
+
 # Find catkin
 find_package(catkin REQUIRED
     roscpp
     rospy
     geometry_msgs
-    can_host_msgs
+    rm_vehicle_msgs
 )
 
 catkin_package(

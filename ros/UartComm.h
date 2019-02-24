@@ -4,15 +4,16 @@
 #include "UartProtocol.h"
 #include "serial/serial.h"
 
-#include "can_host_msgs/gimbalInfo.h"
-#include "geometry_msgs/TwistStamped.h"
+#include "rm_vehicle_msgs/gimbalInfo.h"
+#include "rm_vehicle_msgs/gimbalCmd.h"
+#include "rm_vehicle_msgs/RC.h"
 
 class CommBase
 {
 public:
     CommBase(ros::NodeHandle& nh)
     {
-        start_time = ros::Time::now();
+        sync_time = ros::Time::now();
         comm_status = COMM_UNINIT;
         sync_error = 0;
     }
@@ -32,14 +33,30 @@ public:
         return ros::Time::now() - heartbeat_time > ros::Duration(HEARTBEAT_TIMEOUT_S);
     }
 
+    bool inSyncMode(void)
+    {
+        return comm_status < COMM_ON;
+    }
+
+    void toggleSyncMode(void)
+    {
+        sync_time = ros::Time::now();
+        comm_status = COMM_SYNC_0;
+    }
+
+    void toggleRXMode(void)
+    {
+        comm_status = COMM_ON;
+    }
+
 protected:
-    ros::Time     start_time;
+    ros::Time     sync_time;
     ros::Time     heartbeat_time;
 
     int16_t       sync_error; //sync error in microsecond
     const double  SYNC_TIMEOUT_S      = 1;
     const double  HEARTBEAT_TIMEOUT_S = 1;
-    const double  SYNC_ERROR_TH_MS    = 0.5;
+    const double  SYNC_ERROR_TH_MS    = 1.0;
 
     comm_status_t comm_status;
 };
@@ -68,11 +85,13 @@ public:
      * @return: length of tx bufffer
      */
     uint8_t packGimbalCmd(uint8_t txbuf[],
-        const geometry_msgs::TwistStamped &msg);
-    void    processGimbalInfo(uint8_t rxbuf[], ros::Publisher &pub,
-        const bool valid);
+        const rm_vehicle_msgs::gimbalCmd &msg);
+    void    processGimbalInfo(uint8_t rxbuf[], const bool valid);
 
-    void gimbalCmdCallback(const geometry_msgs::TwistStamped::ConstPtr& msg);
+    void gimbalCmdCallback(const rm_vehicle_msgs::gimbalCmd::ConstPtr& msg);
+
+    ros::Publisher gimbalInfo_pub;
+    ros::Publisher RC_pub;
 
 private:
     uint32_t sync_attempt;
@@ -81,7 +100,7 @@ private:
     ros::Time restore_timeStamp32(uint16_t rx_time)
     {
         uint32_t timestamp_ms =
-            (ros::Time::now() - start_time).toNSec()/1e6;
+            (ros::Time::now() - sync_time).toNSec()/1e6;
 
         uint16_t timestamp_low16  = (uint16_t)(timestamp_ms);
         uint16_t timestamp_high16 = (uint16_t)(timestamp_ms >> 16);
@@ -97,6 +116,6 @@ private:
 
         ros::Duration rx_duration((double)rx_time_32 / 1000);
 
-        return start_time + rx_duration;
+        return sync_time + rx_duration;
     }
 };
