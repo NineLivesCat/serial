@@ -34,7 +34,7 @@ int main(int argc, char **argv)
     nh.param<double>("/serial/timeout",  timeout_ms,   0.3);
 
     serial::Timeout timeout(1, 1, 0, 0, 0),
-                    timeout_sync = serial::Timeout::simpleTimeout(100);
+                    timeout_sync = serial::Timeout::simpleTimeout(50);
 
     serial::Serial serial_host(port, baud, timeout_sync);
     if(serial_host.isOpen())
@@ -54,6 +54,9 @@ int main(int argc, char **argv)
             tx_buffer[max_len];
     size_t  rx_size;
 
+    serial_host.flush();
+    ros::Duration(0.5).sleep();
+
     while (ros::ok())
     {
         if(comm.inSyncMode())//synchonization
@@ -65,6 +68,7 @@ int main(int argc, char **argv)
             {
                 if(!comm.processSyncSeq(rx_buffer))
                 {
+                    ros::Duration(0.01).sleep();
                     comm.packSyncSeq(tx_buffer, true);
                     serial_host.write(tx_buffer, length);
                     serial_host.flush();
@@ -75,7 +79,7 @@ int main(int argc, char **argv)
                 ROS_WARN("Timestamp sync unsuccessful, check UART connection");
 
             comm.processGimbalInfo(rx_buffer, false);
-            ros::Duration(0.01).sleep();
+            ros::Duration(0.005).sleep();
         }
         else
         {
@@ -84,6 +88,9 @@ int main(int argc, char **argv)
             rx_size = serial_host.read(rx_buffer, length);
             if(rx_size == length)
                 comm.processGimbalInfo(rx_buffer, true);
+
+            if(comm.inIdleMode())
+                comm.sendHeartbeat(tx_buffer);
 
             if(comm.check_timeout()) //Switch to sync mode
             {

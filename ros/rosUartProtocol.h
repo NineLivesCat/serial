@@ -5,17 +5,19 @@
  *   NOTE: This header file is shared among
  *   robomaster computer(s) & MCU(s)
  *   =======SHOULD CHECK THE VERSION NUMBER BEFORE USE======
- *   =======VERSION: 2019.01.23=============================
+ *   =======VERSION: 2019.03.25=============================
  */
-#define UART_START_BYTE        0xAA
+#define UART_PROTOCOL_VERSION     0x01
+#define UART_START_BYTE           0xAA
+#define UART_CHECKSUM_OFFSET      0xA5
 
-#define UART_HEARTBEAT_G_ID    0x00
-#define UART_SYNC_H2G_ID       0x01
-#define UART_SYNC_G2H_ID       0x02
-#define UART_GIMBAL_INFO_ID    0x05
-#define UART_GIMBAL_CMD_ID     0x06
-#define UART_PING_H2G_ID       0xFE
-#define UART_PING_G2H_ID       0xFF
+#define UART_SYNC_H2G_ID          0x01
+#define UART_SYNC_G2H_ID          0x02
+#define UART_HOST_HEARTBEAT_ID    0x03
+#define UART_GIMBAL_INFO_ID       0x05
+#define UART_GIMBAL_CMD_ID        0x06
+#define UART_ROS_PARAM_ID         0x0A
+#define UART_INVALID_ID           0xFF
 
 #define GIMBAL_INFO_ANGVEL_PSC     900
 #define GIMBAL_INFO_ANG_PSC      10000
@@ -31,33 +33,39 @@ typedef struct
 {
     uint8_t start;
     uint8_t type;
-    uint8_t len;
 } __attribute__((packed)) uart_header_t;
 
 typedef uint8_t  uart_crc_t;
+typedef uint8_t  uart_heartbeat_t;
+
 typedef struct
 {
     uint32_t dt;
     int16_t  error;
-    uint8_t  status;
+    uint8_t  status  : 1;
+    uint8_t  version : 7;
 } __attribute__((packed)) uart_sync_t;
 
 typedef struct
 {
-    uint32_t timeStamp_32;
-} __attribute__((packed)) uart_heartbeat_t;
-
-typedef struct
-{
     uint16_t timeStamp_16;
-    uint8_t  bullet_speed : 5;
-    uint8_t  cv_mode      : 2;
-    uint8_t  rc_cmd       : 1;
+    uint8_t  bullet_speed  : 5;
+    uint8_t  cv_mode       : 1;     //0-armor, 1-rune
+    uint8_t  cv_reset_cmd  : 1;     //set 1 to restart ROS cv nodes
+    uint8_t  cv_enable_cmd : 1;
     int16_t  yaw;
     int16_t  pitch;
     int16_t  gimbal_pitch_angle;
     int16_t  ang_vel[3];
 } __attribute__((packed)) uart_gimbal_info_t;
+
+typedef struct
+{
+    float VS_kp;
+    float VS_kd;
+    float EKF_CV_var;
+    float EKF_Vel_var;
+} __attribute__((packed)) uart_ros_param_t;
 
 typedef struct
 {
@@ -72,8 +80,8 @@ typedef struct
 
 typedef struct
 {
-    uart_heartbeat_t    heartbeat;
-    uart_gimbal_info_t  gimbal_info;
-} __attribute__((packed)) uart_protocol_t;
+    uart_ros_param_t    param;
+    uart_gimbal_cmd_t     cmd;
+} uart_ros_msg_t;
 
 #endif

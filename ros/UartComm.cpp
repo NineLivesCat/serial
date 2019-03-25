@@ -2,11 +2,21 @@
 
 void UartComm::gimbalCmdCallback(const rm_vehicle_msgs::gimbalCmd::ConstPtr& msg)
 {
+    if((ros::Time::now() - last_write).toSec() < 1e-4)
+        return;
+
     if(comm_status == COMM_ON)
     {
+        std::cout<<"Delay:"<<(ros::Time::now() - msg->header.stamp).toSec()<<std::endl;
+
         uint8_t txbuf[30];
         uint8_t length = packGimbalCmd(txbuf, *msg);
         this->serial_port->write(txbuf, length);
+    }
+    else if(comm_status == COMM_IDLE)
+    {
+        this->serial_port->flush();
+        comm_status = COMM_ON; //Received first msg from other nodes
     }
 }
 
@@ -17,17 +27,19 @@ uint8_t UartComm::packSyncSeq(uint8_t txbuf[], const bool sync_ok = false)
     header.type = UART_SYNC_H2G_ID;
 
     uint8_t len = sizeof(uart_header_t)+sizeof(uart_sync_t)+sizeof(uart_crc_t);
-    header.len = len;
 
     uart_sync_t sync;
     sync.dt = (ros::Time::now() - sync_time).toNSec()/1e6;
     sync.error = this->sync_error;
     sync.status = sync_ok ? 1 : 0;
+    sync.version = UART_PROTOCOL_VERSION;
 
     uint8_t* txptr = txbuf;
     memcpy(txptr, &header, sizeof(uart_header_t));
     txptr += sizeof(uart_header_t);
     memcpy(txptr, &sync,   sizeof(uart_sync_t  ));
+
+    this->append_crc(txbuf, len);
 
     return len;
 }
@@ -82,6 +94,7 @@ uint8_t UartComm::packGimbalCmd(uint8_t txbuf[], const rm_vehicle_msgs::gimbalCm
     memcpy(txptr, &header, sizeof(uart_header_t));
     txptr += sizeof(uart_header_t);
     memcpy(txptr, &cmd,   sizeof(uart_gimbal_cmd_t));
+    this->append_crc(txbuf, len);
 
     return len;
 }
@@ -112,7 +125,7 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
         gimbalMsg.imu_w.z      = (float)(gimbal.ang_vel[2])/GIMBAL_INFO_ANGVEL_PSC;
         gimbalMsg.bullet_speed = gimbal.bullet_speed;
 
-        RCMsg  .control_enable = gimbal.rc_cmd;
+        RCMsg  .control_enable = gimbal.cv_enable_cmd;
     }
     else
     {
