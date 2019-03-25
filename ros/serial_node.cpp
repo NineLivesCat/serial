@@ -34,7 +34,7 @@ int main(int argc, char **argv)
     nh.param<double>("/serial/timeout",  timeout_ms,   0.3);
 
     serial::Timeout timeout(1, 1, 0, 0, 0),
-                    timeout_sync = serial::Timeout::simpleTimeout(50);
+                    timeout_sync = serial::Timeout::simpleTimeout(4);
 
     serial::Serial serial_host(port, baud, timeout_sync);
     if(serial_host.isOpen())
@@ -61,25 +61,27 @@ int main(int argc, char **argv)
     {
         if(comm.inSyncMode())//synchonization
         {
-            uint8_t length = comm.packSyncSeq(tx_buffer, false);
-            serial_host.write(tx_buffer, length);
+            uint8_t length = sizeof(uart_header_t)+
+                sizeof(uart_sync_t)+sizeof(uart_crc_t);
+
+            comm.SendSyncSeq(tx_buffer, false);
             rx_size = serial_host.read(rx_buffer, length);
             if(rx_size == length)
             {
                 if(!comm.processSyncSeq(rx_buffer))
                 {
-                    ros::Duration(0.01).sleep();
-                    comm.packSyncSeq(tx_buffer, true);
-                    serial_host.write(tx_buffer, length);
-                    serial_host.flush();
+                    comm.SendSyncSeq(tx_buffer, true);
                     comm.toggleRXMode();
                 }
             }
             else
-                ROS_WARN("Timestamp sync unsuccessful, check UART connection");
+                comm.toggleSyncMode();
+
+            static uint32_t noData_cnt;
+            if(!rx_size && !(++noData_cnt % 50))
+                ROS_WARN("No data received from embedded device");
 
             comm.processGimbalInfo(rx_buffer, false);
-            ros::Duration(0.005).sleep();
         }
         else
         {
@@ -102,5 +104,6 @@ int main(int argc, char **argv)
         ros::spinOnce();
     }
 
+    serial_host.flush();
     return 0;
 }

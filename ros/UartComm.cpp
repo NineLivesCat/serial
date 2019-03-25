@@ -12,6 +12,7 @@ void UartComm::gimbalCmdCallback(const rm_vehicle_msgs::gimbalCmd::ConstPtr& msg
         uint8_t txbuf[30];
         uint8_t length = packGimbalCmd(txbuf, *msg);
         this->serial_port->write(txbuf, length);
+        last_write = ros::Time::now();
     }
     else if(comm_status == COMM_IDLE)
     {
@@ -26,12 +27,19 @@ uint8_t UartComm::packSyncSeq(uint8_t txbuf[], const bool sync_ok = false)
     header.start = UART_START_BYTE;
     header.type = UART_SYNC_H2G_ID;
 
-    uint8_t len = sizeof(uart_header_t)+sizeof(uart_sync_t)+sizeof(uart_crc_t);
+    static const uint8_t len = sizeof(uart_header_t)+sizeof(uart_sync_t)+sizeof(uart_crc_t);
 
     uart_sync_t sync;
-    sync.dt = (ros::Time::now() - sync_time).toNSec()/1e6;
-    sync.error = this->sync_error;
-    sync.status = sync_ok ? 1 : 0;
+    sync.dt      = (ros::Time::now() - sync_time).toNSec()/1e6;
+
+    int32_t sync_error_32 = this->sync_error;
+    if(sync_error_32 > 32767)
+        sync_error_32 = 32767;
+    else if(sync_error_32 < -32768)
+        sync_error_32 = -32768;
+
+    sync.error   = sync_error_32;
+    sync.status  = sync_ok ? 1 : 0;
     sync.version = UART_PROTOCOL_VERSION;
 
     uint8_t* txptr = txbuf;
@@ -44,20 +52,45 @@ uint8_t UartComm::packSyncSeq(uint8_t txbuf[], const bool sync_ok = false)
     return len;
 }
 
+void UartComm::SendSyncSeq(uint8_t txbuf[], const bool sync_ok = false)
+{
+    if((ros::Time::now() - last_write).toSec() < 1e-4)
+        return;
+
+    static const uint8_t len = sizeof(uart_header_t)+sizeof(uart_sync_t)+sizeof(uart_crc_t);
+
+    packSyncSeq(txbuf, sync_ok);
+    this->serial_port->write(txbuf, len);
+
+    last_write = ros::Time::now();
+}
+
 uint8_t UartComm::processSyncSeq(uint8_t rxbuf[])
 {
-    comm_status = COMM_SYNC_1;
-    if(rxbuf[0] != UART_START_BYTE)
+    static const uint8_t len = sizeof(uart_header_t) +
+            sizeof(uart_sync_t) +
+            sizeof(uart_crc_t);
+
+    if(rxbuf[0] != UART_START_BYTE || !verify_crc(rxbuf, len))
     {
-        printf("%c\n", rxbuf[0]);
-        ROS_ERROR("Incorrect data frame received");
-        //TODO Do some other things to prevent the following packets go bad
+        if(comm_status > COMM_SYNC_0)
+            ROS_WARN("Incorrect data frame received");
+
+        toggleSyncMode();
         return -2;
+    }
+    else if(comm_status < COMM_SYNC_1)
+    {
+        serial::Timeout stable_timeout = serial::Timeout::simpleTimeout(50);
+        this->serial_port->setTimeout(stable_timeout);
+
+        ROS_INFO("Synchonizing with device");
+        comm_status = COMM_SYNC_1;
     }
 
     uart_sync_t* sync = (uart_sync_t*)(rxbuf + sizeof(uart_header_t));
-    this->sync_error = (ros::Time::now() - sync_time).toNSec()/1e4 -
-                        sync->dt*100;
+    this->sync_error  = (ros::Time::now() - sync_time).toNSec()/1e4 -
+                         sync->dt*100;
 
     if(++sync_attempt > 1000)
     {
@@ -78,13 +111,16 @@ uint8_t UartComm::processSyncSeq(uint8_t rxbuf[])
 
 uint8_t UartComm::packGimbalCmd(uint8_t txbuf[], const rm_vehicle_msgs::gimbalCmd &msg)
 {
-    uint8_t len = sizeof(uart_header_t)+sizeof(uart_gimbal_cmd_t)+sizeof(uart_crc_t);
+    static const uint8_t len = sizeof(uart_header_t)+sizeof(uart_gimbal_cmd_t)+sizeof(uart_crc_t);
 
     uart_header_t header;
     header.start = UART_START_BYTE;
     header.type = UART_GIMBAL_CMD_ID;
 
     uart_gimbal_cmd_t cmd;
+
+    uint32_t timestamp = (msg.header.stamp - sync_time).toNSec()/1e6;
+    cmd.timeStamp_16 = (uint16_t)(timestamp & 0x0000FFFF);
     cmd.yaw_velCmd   = msg.yaw_cmd * GIMBAL_CMD_ANGVEL_PSC;
     cmd.pitch_velCmd = msg.pitch_cmd * GIMBAL_CMD_ANGVEL_PSC;
     cmd.valid        = msg.valid;
@@ -101,15 +137,26 @@ uint8_t UartComm::packGimbalCmd(uint8_t txbuf[], const rm_vehicle_msgs::gimbalCm
 
 void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
 {
+    static const uint8_t len = sizeof(uart_header_t)+
+            sizeof(uart_gimbal_info_t)+
+            sizeof(uart_crc_t);
+
     heartbeat_time = ros::Time::now();
     rm_vehicle_msgs::gimbalInfo gimbalMsg;
     rm_vehicle_msgs::RC         RCMsg;
 
-    gimbalMsg.valid = valid;
-    RCMsg    .valid = valid;
-
     if(valid)
     {
+        if(rxbuf[0] != UART_START_BYTE || !verify_crc(rxbuf, len))
+        {
+            ROS_WARN("Incorrect data frame received");
+
+            frame_err_cnt++;
+            if(frame_err_cnt > 5)
+                toggleSyncMode();
+            return;
+        }
+
         uart_gimbal_info_t gimbal;
         memcpy(&gimbal, &rxbuf[sizeof(uart_header_t)], sizeof(uart_gimbal_info_t));
 
@@ -123,12 +170,19 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
         gimbalMsg.imu_w.x      = (float)(gimbal.ang_vel[0])/GIMBAL_INFO_ANGVEL_PSC;
         gimbalMsg.imu_w.y      = (float)(gimbal.ang_vel[1])/GIMBAL_INFO_ANGVEL_PSC;
         gimbalMsg.imu_w.z      = (float)(gimbal.ang_vel[2])/GIMBAL_INFO_ANGVEL_PSC;
-        gimbalMsg.bullet_speed = gimbal.bullet_speed;
 
+        gimbalMsg.bullet_speed = gimbal.bullet_speed;
         RCMsg  .control_enable = gimbal.cv_enable_cmd;
+
+        gimbalMsg.valid = gimbal.bullet_speed; //bullet_speed = 0 means gimbal not initialized
+        RCMsg    .valid = gimbal.bullet_speed;
+
     }
     else
     {
+        gimbalMsg.valid = valid;
+        RCMsg    .valid = valid;
+
         gimbalMsg.header.stamp = ros::Time::now();
         RCMsg    .header.stamp = ros::Time::now();
     }

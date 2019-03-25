@@ -17,10 +17,7 @@ public:
         comm_status = COMM_UNINIT;
         sync_error = 0;
 
-        uint8_t chn_err_cnt = 0;
-        uint8_t timeout_cnt = 0;
-        uint8_t crc_err_cnt = 0;
-        uint8_t protocol_err_cnt = 0;
+        frame_err_cnt = 0;
     }
 
     enum comm_status_t
@@ -37,6 +34,11 @@ public:
     bool check_timeout(void)
     {
         return ros::Time::now() - heartbeat_time > ros::Duration(HEARTBEAT_TIMEOUT_S);
+    }
+
+    bool isStable(void)
+    {
+        return comm_status > COMM_SYNC_0;
     }
 
     bool inSyncMode(void)
@@ -57,19 +59,19 @@ public:
 
     void toggleRXMode(void)
     {
+        frame_err_cnt = 0;
         comm_status = COMM_IDLE;
     }
 
 protected:
-    bool verify_crc(const uint8_t* rxbuf, const uint8_t length)
+    bool verify_crc(uint8_t rxbuf[], const uint8_t length)
     {
-        uint8_t check_result = 0;
+        uint16_t check_result = 0;
         uint8_t i = 0;
         for(;i < length - 1; check_result+= rxbuf[i++]);
 
         check_result += UART_CHECKSUM_OFFSET;
-
-        return rxbuf[i] == check_result;
+        return rxbuf[i] == (check_result & 0x00FF);
     }
 
     void append_crc(uint8_t* txbuf, const uint8_t length)
@@ -86,17 +88,13 @@ protected:
     ros::Time     sync_time;
     ros::Time     heartbeat_time;
 
-    int16_t       sync_error; //sync error in microsecond
+    int           sync_error; //sync error in microsecond
     const double  SYNC_TIMEOUT_S      = 1;
     const double  HEARTBEAT_TIMEOUT_S = 1;
     const double  SYNC_ERROR_TH_MS    = 1.0;
 
-    static uint8_t chn_err_cnt;
-    static uint8_t timeout_cnt;
-    static uint8_t crc_err_cnt;
-    static uint8_t protocol_err_cnt;
-
-    comm_status_t comm_status;
+    uint8_t frame_err_cnt;
+    comm_status_t  comm_status;
 };
 
 class UartComm : public CommBase
@@ -132,6 +130,19 @@ public:
         last_write = ros::Time::now();
     }
 
+    void SendSyncSeq(uint8_t txbuf[], const bool sync_ok);
+
+    void toggleSyncMode(void)
+    {
+        if(comm_status > COMM_SYNC_0)
+        {
+            serial::Timeout unstable_timeout = serial::Timeout::simpleTimeout(4);
+            this->serial_port->setTimeout(unstable_timeout);
+        }
+
+        CommBase::toggleSyncMode();
+    }
+
     /*
      * @brief:  convert ros::Time to uart synchonization packet data
      * @return: length of tx bufffer
@@ -149,7 +160,7 @@ public:
         const rm_vehicle_msgs::gimbalCmd &msg);
     void    processGimbalInfo(uint8_t rxbuf[], const bool valid);
 
-    void gimbalCmdCallback(const rm_vehicle_msgs::gimbalCmd::ConstPtr& msg);
+    void    gimbalCmdCallback(const rm_vehicle_msgs::gimbalCmd::ConstPtr& msg);
 
     ros::Publisher gimbalInfo_pub;
     ros::Publisher RC_pub;
