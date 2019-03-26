@@ -162,6 +162,10 @@ public:
 
     void    gimbalCmdCallback(const rm_vehicle_msgs::gimbalCmd::ConstPtr& msg);
 
+    //These are supposed to be a thread function
+    void    gimbalInfoRxProcess(void);
+    void    heartbeatTxProcess(void);
+
     ros::Publisher gimbalInfo_pub;
     ros::Publisher RC_pub;
 

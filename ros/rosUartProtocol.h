@@ -63,8 +63,6 @@ typedef struct
 {
     float VS_kp;
     float VS_kd;
-    float EKF_CV_var;
-    float EKF_Vel_var;
 } __attribute__((packed)) uart_ros_param_t;
 
 typedef struct

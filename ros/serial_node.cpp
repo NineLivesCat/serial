@@ -3,6 +3,11 @@
 #include <iostream>
 #include <cstdio>
 
+#include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/chrono.hpp>
+#include <boost/bind.hpp>
+
 // OS Specific sleep
 #ifdef _WIN32
 #include <windows.h>
@@ -54,6 +59,12 @@ int main(int argc, char **argv)
             tx_buffer[max_len];
     size_t  rx_size;
 
+    boost::thread serialReadThd(boost::bind(&UartComm::gimbalInfoRxProcess, &comm));
+    serialReadThd.detach();
+
+    boost::thread heartbeatTxThd(boost::bind(&UartComm::heartbeatTxProcess, &comm));
+    heartbeatTxThd.detach();
+
     serial_host.flush();
     ros::Duration(0.5).sleep();
 
@@ -83,24 +94,7 @@ int main(int argc, char **argv)
 
             comm.processGimbalInfo(rx_buffer, false);
         }
-        else
-        {
-            uint8_t length = sizeof(uart_header_t)+
-                    sizeof(uart_gimbal_info_t)+sizeof(uart_crc_t);
-            rx_size = serial_host.read(rx_buffer, length);
-            if(rx_size == length)
-                comm.processGimbalInfo(rx_buffer, true);
 
-            if(comm.inIdleMode())
-                comm.sendHeartbeat(tx_buffer);
-
-            if(comm.check_timeout()) //Switch to sync mode
-            {
-                ROS_WARN("Connection lost with device, trying re-connection...");
-                serial_host.flush();
-                comm.toggleSyncMode();
-            }
-        }
         ros::spinOnce();
     }
 

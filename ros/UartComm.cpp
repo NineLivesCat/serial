@@ -2,11 +2,12 @@
 
 void UartComm::gimbalCmdCallback(const rm_vehicle_msgs::gimbalCmd::ConstPtr& msg)
 {
-    if((ros::Time::now() - last_write).toSec() < 1e-4)
-        return;
-
+    ROS_INFO("Fuck");
     if(comm_status == COMM_ON)
     {
+        if((ros::Time::now() - last_write).toSec() < 1e-4)
+            return;
+
         std::cout<<"Delay:"<<(ros::Time::now() - msg->header.stamp).toSec()<<std::endl;
 
         uint8_t txbuf[30];
@@ -16,7 +17,6 @@ void UartComm::gimbalCmdCallback(const rm_vehicle_msgs::gimbalCmd::ConstPtr& msg
     }
     else if(comm_status == COMM_IDLE)
     {
-        this->serial_port->flush();
         comm_status = COMM_ON; //Received first msg from other nodes
     }
 }
@@ -189,4 +189,41 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
 
     gimbalInfo_pub.publish(gimbalMsg);
     RC_pub.publish(RCMsg);
+}
+
+void UartComm::heartbeatTxProcess(void)
+{
+    uint8_t txbuf[10];
+    while(ros::ok())
+    {
+        if(comm_status == COMM_IDLE)
+        {
+            sendHeartbeat(txbuf);
+            ros::Duration(0.05).sleep();
+        }
+    }
+}
+
+void UartComm::gimbalInfoRxProcess(void)
+{
+    static const uint8_t length = sizeof(uart_header_t)+
+            sizeof(uart_gimbal_info_t)+sizeof(uart_crc_t);
+
+    uint8_t rxbuf[length];
+    while(ros::ok())
+    {
+        if(comm_status >= COMM_IDLE)
+        {
+            uint8_t rx_size = this->serial_port->read(rxbuf, length);
+            if(rx_size == length)
+                processGimbalInfo(rxbuf, true);
+
+            if(check_timeout()) //Switch to sync mode
+            {
+                ROS_WARN("Connection lost with device, trying re-connection...");
+                this->serial_port->flush();
+                toggleSyncMode();
+            }
+        }
+    }
 }
