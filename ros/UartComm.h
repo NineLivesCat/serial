@@ -4,6 +4,7 @@
 #include "rosUartProtocol.h"
 #include "serial/serial.h"
 
+#include "rm_cv_msgs/VisualServo.h"
 #include "rm_vehicle_msgs/gimbalInfo.h"
 #include "rm_vehicle_msgs/gimbalCmd.h"
 #include "rm_vehicle_msgs/RC.h"
@@ -22,13 +23,14 @@ public:
 
     enum comm_status_t
     {
-        COMM_UNINIT  = 0,
-        COMM_OFF     = 1,
-        COMM_SYNC_0  = 2,
-        COMM_SYNC_1  = 3,
-        COMM_IDLE    = 4,
-        COMM_ON      = 5,
-        COMM_ERROR   = -1
+        COMM_UNINIT      = 0,
+        COMM_OFF         = 1,
+        COMM_SYNC_0      = 2,
+        COMM_SYNC_1      = 3,
+        COMM_SEND_PARAM  = 4,
+        COMM_IDLE        = 5,
+        COMM_ON          = 6,
+        COMM_ERROR       = -1
     };
 
     bool check_timeout(void)
@@ -43,12 +45,7 @@ public:
 
     bool inSyncMode(void)
     {
-        return comm_status < COMM_IDLE;
-    }
-
-    bool inIdleMode(void)
-    {
-        return comm_status == COMM_IDLE;
+        return comm_status < COMM_SEND_PARAM;
     }
 
     void toggleSyncMode(void)
@@ -60,7 +57,7 @@ public:
     void toggleRXMode(void)
     {
         frame_err_cnt = 0;
-        comm_status = COMM_IDLE;
+        comm_status = COMM_SEND_PARAM;
     }
 
 protected:
@@ -161,6 +158,12 @@ public:
     void    processGimbalInfo(uint8_t rxbuf[], const bool valid);
 
     void    gimbalCmdCallback(const rm_vehicle_msgs::gimbalCmd::ConstPtr& msg);
+
+    uint8_t packTargetInfo(uint8_t txbuf[], const rm_cv_msgs::VisualServo &msg);
+    void    visualServoCallback(const rm_cv_msgs::VisualServo::ConstPtr& msg);
+
+    uint8_t sendParameters(uint8_t txbuf[]);
+    void    processParamResponse(uint8_t rxbuf[]);
 
     //These are supposed to be a thread function
     void    gimbalInfoRxProcess(void);

@@ -28,6 +28,7 @@
   <exec_depend>rospy</exec_depend>
 
   <depend>rm_vehicle_msgs</depend>
+  <depend>rm_cv_msgs</depend>
   <depend>geometry_msgs</depend>
 
   <test_depend>boost</test_depend>

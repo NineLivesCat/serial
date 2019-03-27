@@ -33,10 +33,10 @@ int main(int argc, char **argv)
     int      baud, max_len;
     double   timeout_ms;
 
-    nh.param<std::string>("/serial/port", port, "/dev/ttyUSB0");
-    nh.param<int>   ("/serial/baudrate", baud,      230400);
-    nh.param<int>   ("/serial/max_len",  max_len,       30);
-    nh.param<double>("/serial/timeout",  timeout_ms,   0.3);
+    nh.param<std::string>("/serial_node/port", port, "/dev/ttyUSB0");
+    nh.param<int>   ("/serial_node/baudrate", baud,      230400);
+    nh.param<int>   ("/serial_node/max_len",  max_len,       30);
+    nh.param<double>("/serial_node/timeout",  timeout_ms,   0.3);
 
     serial::Timeout timeout(1, 1, 0, 0, 0),
                     timeout_sync = serial::Timeout::simpleTimeout(4);

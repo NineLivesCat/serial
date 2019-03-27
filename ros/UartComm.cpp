@@ -2,7 +2,6 @@
 
 void UartComm::gimbalCmdCallback(const rm_vehicle_msgs::gimbalCmd::ConstPtr& msg)
 {
-    ROS_INFO("Fuck");
     if(comm_status == COMM_ON)
     {
         if((ros::Time::now() - last_write).toSec() < 1e-4)
@@ -89,6 +88,12 @@ uint8_t UartComm::processSyncSeq(uint8_t rxbuf[])
     }
 
     uart_sync_t* sync = (uart_sync_t*)(rxbuf + sizeof(uart_header_t));
+    if(sync->version != UART_PROTOCOL_VERSION)
+    {
+        ROS_FATAL("Incorrect version of uart ROS protocol!");
+        return -3;
+    }
+
     this->sync_error  = (ros::Time::now() - sync_time).toNSec()/1e4 -
                          sync->dt*100;
 
@@ -107,6 +112,38 @@ uint8_t UartComm::processSyncSeq(uint8_t rxbuf[])
     }
 
     return 1;
+}
+
+uint8_t UartComm::packTargetInfo(uint8_t txbuf[], const rm_cv_msgs::VisualServo &msg)
+{
+    static const uint8_t len = sizeof(uart_header_t)+
+        sizeof(uart_target_t)+sizeof(uart_crc_t);
+
+    uart_header_t header;
+    header.start = UART_START_BYTE;
+    header.type = UART_TARGET_ID;
+
+    uart_target_t cmd;
+
+    uint32_t timestamp = (msg.header.stamp - sync_time).toNSec()/1e6;
+    cmd.timeStamp_16 = (uint16_t)(timestamp & 0x0000FFFF);
+
+    //For gen1 visual servo, send target pos only
+    cmd.z_pos        = (float)(msg.z)*TARGET_POS_PSC;
+    cmd.y_pos        = (float)(msg.y)*TARGET_POS_PSC;
+    cmd.z_vel        = 0;
+    cmd.y_vel        = 0;
+
+    cmd.valid        = msg.valid;
+    cmd.shootMode    = msg.shootMode;
+
+    uint8_t* txptr = txbuf;
+    memcpy(txptr, &header, sizeof(uart_header_t));
+    txptr += sizeof(uart_header_t);
+    memcpy(txptr, &cmd,   sizeof(uart_target_t));
+    this->append_crc(txbuf, len);
+
+    return len;
 }
 
 uint8_t UartComm::packGimbalCmd(uint8_t txbuf[], const rm_vehicle_msgs::gimbalCmd &msg)
@@ -147,7 +184,8 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
 
     if(valid)
     {
-        if(rxbuf[0] != UART_START_BYTE || !verify_crc(rxbuf, len))
+        uart_header_t* header = (uart_header_t*)&rxbuf[0];
+        if(rxbuf[0] != UART_START_BYTE || !verify_crc(rxbuf, len) || header->type != UART_GIMBAL_INFO_ID)
         {
             ROS_WARN("Incorrect data frame received");
 
@@ -191,14 +229,120 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
     RC_pub.publish(RCMsg);
 }
 
+void UartComm::processParamResponse(uint8_t rxbuf[])
+{
+    static const uint8_t len = sizeof(uart_header_t)+
+            sizeof(uart_param_response_t)+
+            sizeof(uart_crc_t);
+
+    heartbeat_time = ros::Time::now();
+
+    uart_header_t*         header   = (uart_header_t*)&rxbuf[0];
+    uart_param_response_t* response = (uart_param_response_t*)&rxbuf[sizeof(uart_header_t)];
+
+    if(
+        rxbuf[0] == UART_START_BYTE &&
+        verify_crc(rxbuf, len) &&
+        header->type == UART_ROS_RESPONSE_ID &&
+        response->content == RESPONSE_OK
+      )
+    {
+        ROS_INFO("Param setup complete");
+        comm_status = COMM_IDLE;
+    }
+    else
+    {
+        ROS_WARN("Incorrect data frame received");
+
+        frame_err_cnt++;
+        if(frame_err_cnt > 5)
+            toggleSyncMode();
+        return;
+    }
+}
+
+uint8_t UartComm::sendParameters(uint8_t txbuf[])
+{
+    if((ros::Time::now() - last_write).toSec() < 1e-4)
+        return 1;
+
+    static const uint8_t len = sizeof(uart_header_t)+
+            sizeof(uart_ros_param_t)+
+            sizeof(uart_crc_t);
+
+    uart_header_t header;
+    header.start = UART_START_BYTE;
+    header.type  = UART_ROS_PARAM_ID;
+
+    uart_ros_param_t param;
+
+    float vs_kp;
+    if (!ros::param::get("/serial_node/control/VS_kp", vs_kp))
+    {
+        ROS_FATAL("Param VS_KP not found!");
+        return -1;
+    }
+
+    float vs_kd;
+    if (!ros::param::get("/serial_node/control/VS_kd", vs_kd))
+    {
+        ROS_FATAL("Param VS_KD not found!");
+        return -1;
+    }
+
+    float EKF_predict;
+    if (!ros::param::get("/serial_node/control/EKF_predict", EKF_predict))
+    {
+        ROS_FATAL("Param EKF prediction not found!");
+        return -1;
+    }
+
+    float EKF_update;
+    if (!ros::param::get("/serial_node/control/EKF_update", EKF_update))
+    {
+        ROS_FATAL("Param EKF update not found!");
+        return -1;
+    }
+
+    param.VS_kp       = vs_kp;
+    param.VS_kd       = vs_kd;
+    param.EKF_predict = EKF_predict;
+    param.EKF_update  = EKF_update;
+
+    uint8_t* txptr = txbuf;
+    memcpy(txptr, &header, sizeof(uart_header_t));
+    txptr += sizeof(uart_header_t);
+    memcpy(txptr, &param,   sizeof(uart_ros_param_t));
+    this->append_crc(txbuf, len);
+
+    this->serial_port->write(txbuf, len);
+
+    last_write = ros::Time::now();
+
+    return 0;
+}
+
 void UartComm::heartbeatTxProcess(void)
 {
-    uint8_t txbuf[10];
+    static uint8_t txbuf[40];
     while(ros::ok())
     {
-        if(comm_status == COMM_IDLE)
+        if(comm_status > COMM_IDLE)
+        {
+            frame_err_cnt = 0; //Flush error counter
+            ros::Duration(1).sleep();
+        }
+        else if(comm_status == COMM_IDLE)
         {
             sendHeartbeat(txbuf);
+            ros::Duration(0.05).sleep();
+        }
+        else if(comm_status == COMM_SEND_PARAM)
+        {
+            if(sendParameters(txbuf) == -1)
+            {
+                ROS_FATAL("Required parameter not found!");
+            }
             ros::Duration(0.05).sleep();
         }
     }
@@ -212,11 +356,16 @@ void UartComm::gimbalInfoRxProcess(void)
     uint8_t rxbuf[length];
     while(ros::ok())
     {
-        if(comm_status >= COMM_IDLE)
+        if(comm_status >= COMM_SEND_PARAM)
         {
             uint8_t rx_size = this->serial_port->read(rxbuf, length);
             if(rx_size == length)
-                processGimbalInfo(rxbuf, true);
+            {
+                if(comm_status > COMM_SEND_PARAM)
+                    processGimbalInfo(rxbuf, true);
+                else
+                    processParamResponse(rxbuf);
+            }
 
             if(check_timeout()) //Switch to sync mode
             {

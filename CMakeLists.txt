@@ -9,6 +9,7 @@ find_package(catkin REQUIRED
     roscpp
     rospy
     geometry_msgs
+    rm_cv_msgs
     rm_vehicle_msgs
 )
 

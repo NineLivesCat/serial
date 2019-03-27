@@ -1,0 +1,14 @@
+<launch>
+     <node name="serial_node"  pkg="serial"  type="serial_node" output="screen">
+        <param name="port"                      type="str"    value="/dev/ttyUSB0"/>
+        <param name="baudrate"                  type="int"    value="230400"/>
+        <param name="max_len"                   type="int"    value="30"/>
+        <param name="timeout"                   type="double" value="0.3"/>
+
+        <param name="control/VS_kp"             type="double" value="6"/>
+        <param name="control/VS_kd"             type="double" value="0.6"/>
+        <param name="control/EKF_predict"       type="double" value="0.3"/>
+        <param name="control/EKF_update"        type="double" value="0.05"/>
+    </node>
+
+</launch>
