@@ -55,6 +55,9 @@ int main(int argc, char **argv)
     ros::Subscriber gimbalCmd_sub = nh.subscribe("/RM_gimbal/control",10,
         &UartComm::gimbalCmdCallback, &comm);
 
+    ros::Subscriber visualServo_sub = nh.subscribe("/VI_position_cmd",10,
+        &UartComm::visualServoCallback, &comm);
+
     uint8_t rx_buffer[max_len],
             tx_buffer[max_len];
     size_t  rx_size;

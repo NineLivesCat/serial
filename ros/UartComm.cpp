@@ -20,6 +20,26 @@ void UartComm::gimbalCmdCallback(const rm_vehicle_msgs::gimbalCmd::ConstPtr& msg
     }
 }
 
+void UartComm::visualServoCallback(const rm_cv_msgs::VisualServo::ConstPtr& msg)
+{
+    if(comm_status == COMM_ON)
+    {
+        if((ros::Time::now() - last_write).toSec() < 1e-4)
+            return;
+
+        std::cout<<"Delay:"<<(ros::Time::now() - msg->header.stamp).toSec()<<std::endl;
+
+        uint8_t txbuf[30];
+        uint8_t length = packTargetInfo(txbuf, *msg);
+        this->serial_port->write(txbuf, length);
+        last_write = ros::Time::now();
+    }
+    else if(comm_status == COMM_IDLE)
+    {
+        comm_status = COMM_ON; //Received first msg from other nodes
+    }
+}
+
 uint8_t UartComm::packSyncSeq(uint8_t txbuf[], const bool sync_ok = false)
 {
     uart_header_t header;
@@ -129,11 +149,10 @@ uint8_t UartComm::packTargetInfo(uint8_t txbuf[], const rm_cv_msgs::VisualServo 
     cmd.timeStamp_16 = (uint16_t)(timestamp & 0x0000FFFF);
 
     //For gen1 visual servo, send target pos only
-    cmd.z_pos        = (float)(msg.z)*TARGET_POS_PSC;
-    cmd.y_pos        = (float)(msg.y)*TARGET_POS_PSC;
-    cmd.z_vel        = 0;
-    cmd.y_vel        = 0;
-
+    cmd.z_pos        = (float)(msg.z )*TARGET_POS_PSC;
+    cmd.y_pos        = (float)(msg.y )*TARGET_POS_PSC;
+    cmd.z_vel        = (float)(msg.dz)*TARGET_VEL_PSC;
+    cmd.y_vel        = (float)(msg.dy)*TARGET_VEL_PSC;
     cmd.valid        = msg.valid;
     cmd.shootMode    = msg.shootMode;
 
@@ -198,9 +217,17 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
         uart_gimbal_info_t gimbal;
         memcpy(&gimbal, &rxbuf[sizeof(uart_header_t)], sizeof(uart_gimbal_info_t));
 
-        ros::Time stamp = restore_timeStamp32(gimbal.timeStamp_16);
-        gimbalMsg.header.stamp = stamp;
-        RCMsg.    header.stamp = stamp;
+        if(this->use_hard_timestamp)
+        {
+            ros::Time stamp = restore_timeStamp32(gimbal.timeStamp_16);
+            gimbalMsg.header.stamp = stamp;
+            RCMsg.    header.stamp = stamp;
+        }
+        else
+        {
+            gimbalMsg.header.stamp = ros::Time::now() - dt;
+            RCMsg.    header.stamp = ros::Time::now() - dt;
+        }
 
         gimbalMsg.imu_yaw      = (float)(gimbal.yaw)/GIMBAL_INFO_ANG_PSC;
         gimbalMsg.imu_pitch    = (float)(gimbal.pitch)/GIMBAL_INFO_ANG_PSC;
@@ -212,8 +239,8 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
         gimbalMsg.bullet_speed = gimbal.bullet_speed;
         RCMsg  .control_enable = gimbal.cv_enable_cmd;
 
-        gimbalMsg.valid = gimbal.bullet_speed; //bullet_speed = 0 means gimbal not initialized
-        RCMsg    .valid = gimbal.bullet_speed;
+        gimbalMsg.valid = valid; //bullet_speed = 0 means gimbal not initialized
+        RCMsg    .valid = valid;
 
     }
     else
@@ -290,24 +317,13 @@ uint8_t UartComm::sendParameters(uint8_t txbuf[])
         return -1;
     }
 
-    float EKF_predict;
-    if (!ros::param::get("/serial_node/control/EKF_predict", EKF_predict))
-    {
-        ROS_FATAL("Param EKF prediction not found!");
-        return -1;
-    }
+    float vs_ff;
+    if (!ros::param::get("/serial_node/control/VS_ff", vs_ff))
+        vs_ff = 0.0;
 
-    float EKF_update;
-    if (!ros::param::get("/serial_node/control/EKF_update", EKF_update))
-    {
-        ROS_FATAL("Param EKF update not found!");
-        return -1;
-    }
-
-    param.VS_kp       = vs_kp;
-    param.VS_kd       = vs_kd;
-    param.EKF_predict = EKF_predict;
-    param.EKF_update  = EKF_update;
+    param.VS_kp = vs_kp;
+    param.VS_kd = vs_kd;
+    param.VS_ff = vs_ff;
 
     uint8_t* txptr = txbuf;
     memcpy(txptr, &header, sizeof(uart_header_t));
@@ -316,7 +332,6 @@ uint8_t UartComm::sendParameters(uint8_t txbuf[])
     this->append_crc(txbuf, len);
 
     this->serial_port->write(txbuf, len);
-
     last_write = ros::Time::now();
 
     return 0;

@@ -5,7 +5,7 @@
  *   NOTE: This header file is shared among
  *   robomaster computer(s) & MCU(s)
  *   =======SHOULD CHECK THE VERSION NUMBER BEFORE USE======
- *   =======VERSION: 2019.03.27=============================
+ *   =======VERSION: 2019.04.01=============================
  */
 #define UART_PROTOCOL_VERSION     0x01
 #define UART_START_BYTE           0xAA
@@ -25,8 +25,8 @@
 #define GIMBAL_INFO_ANG_PSC      10000
 #define GIMBAL_CMD_ANGVEL_PSC      900
 
-#define TARGET_POS_PSC           20000
-#define TARGET_VEL_PSC            2000
+#define TARGET_POS_PSC           40000
+#define TARGET_VEL_PSC            4000
 #define RESPONSE_OK             0xA5A5
 
 typedef enum
@@ -75,8 +75,7 @@ typedef struct
 {
     float VS_kp;
     float VS_kd;
-    float EKF_predict;
-    float EKF_update;
+    float VS_ff;
 } __attribute__((packed)) uart_ros_param_t;
 
 typedef struct

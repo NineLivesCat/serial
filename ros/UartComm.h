@@ -85,6 +85,9 @@ protected:
     ros::Time     sync_time;
     ros::Time     heartbeat_time;
 
+    bool            use_hard_timestamp;
+    ros::Duration   dt;
+
     int           sync_error; //sync error in microsecond
     const double  SYNC_TIMEOUT_S      = 1;
     const double  HEARTBEAT_TIMEOUT_S = 1;
@@ -101,6 +104,14 @@ public:
         CommBase(nh), serial_port(serial_port),
         sync_attempt(0), last_write(ros::Time::now())
     {
+        bool Use_hard_timestamp;
+        double dts;
+        nh.param<bool>  ("/serial_node/use_hard_timestamp", Use_hard_timestamp, false);
+        nh.param<double>("/serial_node/soft_timestamp_dt" , dts, 0.001);
+
+        this->use_hard_timestamp = Use_hard_timestamp;
+        this->dt = ros::Duration(dts);
+
         ROS_INFO("Starting UART host");
         comm_status = COMM_UNINIT;
     }
