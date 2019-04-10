@@ -9,6 +9,13 @@
 #include "rm_vehicle_msgs/gimbalCmd.h"
 #include "rm_vehicle_msgs/RC.h"
 
+struct User_Command
+{
+    bool reset;
+    bool rune_mode;
+    bool armor_mode;
+};
+
 class CommBase
 {
 public:
@@ -59,6 +66,8 @@ public:
         frame_err_cnt = 0;
         comm_status = COMM_SEND_PARAM;
     }
+
+    User_Command cmd;
 
 protected:
     bool verify_crc(uint8_t rxbuf[], const uint8_t length)

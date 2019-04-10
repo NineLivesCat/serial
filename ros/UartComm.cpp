@@ -242,6 +242,20 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
         gimbalMsg.valid = valid; //bullet_speed = 0 means gimbal not initialized
         RCMsg    .valid = valid;
 
+        //Process user input command
+        cmd.reset = gimbal.cv_reset_cmd;
+
+        static bool rune_mode = false;
+        if(!rune_mode && gimbal.cv_mode == 1)
+        {
+            rune_mode = true;
+            cmd.rune_mode = true;
+        }
+        else if(rune_mode && gimbal.cv_mode == 0)
+        {
+            rune_mode = false;
+            cmd.armor_mode = true;
+        }
     }
     else
     {

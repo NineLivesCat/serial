@@ -16,6 +16,7 @@
 #endif
 
 #include "UartComm.h"
+#include "rm_vehicle_msgs/cvEnable.h"
 
 using std::string;
 using std::exception;
@@ -23,6 +24,37 @@ using std::cout;
 using std::cerr;
 using std::endl;
 using std::vector;
+
+void MasterCtrlProcess(ros::NodeHandle& nh, UartComm* comm)
+{
+    ros::ServiceClient armor_ctrl = nh.serviceClient<rm_vehicle_msgs::cvEnable>("/Armor_Node_Enable");
+    ros::ServiceClient rune_ctrl  = nh.serviceClient<rm_vehicle_msgs::cvEnable>("/Rune_Node_Enable");
+
+    while(ros::ok())
+    {
+        if(comm->cmd.rune_mode) //Switch to rune mode
+        {
+            rm_vehicle_msgs::cvEnable armor_en, rune_en;
+            armor_en.request.enable = false;
+            rune_en.request.enable  = true;
+
+            armor_ctrl.call(armor_en);
+            rune_ctrl.call(rune_en);
+            comm->cmd.rune_mode  = false;
+        }
+
+        if(comm->cmd.armor_mode) //Switch to armor mode
+        {
+            rm_vehicle_msgs::cvEnable armor_en, rune_en;
+            armor_en.request.enable = true;
+            rune_en.request.enable  = false;
+            
+            rune_ctrl.call(rune_en);
+            armor_ctrl.call(armor_en);
+            comm->cmd.armor_mode = false;
+        }
+    }
+}
 
 int main(int argc, char **argv)
 {
@@ -67,6 +99,9 @@ int main(int argc, char **argv)
 
     boost::thread heartbeatTxThd(boost::bind(&UartComm::heartbeatTxProcess, &comm));
     heartbeatTxThd.detach();
+
+    boost::thread masterCtrlThd(boost::bind(&MasterCtrlProcess, nh, &comm));
+    masterCtrlThd.detach();
 
     serial_host.flush();
     ros::Duration(0.5).sleep();
