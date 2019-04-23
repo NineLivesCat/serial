@@ -48,7 +48,7 @@ void MasterCtrlProcess(ros::NodeHandle& nh, UartComm* comm)
             rm_vehicle_msgs::cvEnable armor_en, rune_en;
             armor_en.request.enable = true;
             rune_en.request.enable  = false;
-            
+
             rune_ctrl.call(rune_en);
             armor_ctrl.call(armor_en);
             comm->cmd.armor_mode = false;
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
         ROS_INFO("Connected to port %s", port);
     }
 
-    UartComm comm(nh, &serial_host);
+    UartComm comm(nh, &serial_host, baud);
     comm.gimbalInfo_pub = nh.advertise<rm_vehicle_msgs::gimbalInfo>("/rm_vehicle/gimbal_info", 10);
     comm.RC_pub = nh.advertise<rm_vehicle_msgs::RC>("/rm_vehicle/RC", 10);
 
@@ -94,6 +94,9 @@ int main(int argc, char **argv)
             tx_buffer[max_len];
     size_t  rx_size;
 
+    ros::Duration(0.5).sleep();
+    serial_host.flush();
+
     boost::thread serialReadThd(boost::bind(&UartComm::gimbalInfoRxProcess, &comm));
     serialReadThd.detach();
 
@@ -102,9 +105,6 @@ int main(int argc, char **argv)
 
     boost::thread masterCtrlThd(boost::bind(&MasterCtrlProcess, nh, &comm));
     masterCtrlThd.detach();
-
-    serial_host.flush();
-    ros::Duration(0.5).sleep();
 
     while (ros::ok())
     {

@@ -2,9 +2,14 @@
 
 void UartComm::gimbalCmdCallback(const rm_vehicle_msgs::gimbalCmd::ConstPtr& msg)
 {
+    static const uint8_t len = sizeof(uart_header_t)+
+        sizeof(uart_gimbal_cmd_t)+sizeof(uart_crc_t);
+
+    static const double tx_wait_time = len * 10. * 1.1 / this->baudrate;
+
     if(comm_status == COMM_ON)
     {
-        if((ros::Time::now() - last_write).toSec() < 1e-4)
+        if((ros::Time::now() - last_write).toSec() < tx_wait_time)
             return;
 
         std::cout<<"Delay:"<<(ros::Time::now() - msg->header.stamp).toSec()<<std::endl;
@@ -22,9 +27,14 @@ void UartComm::gimbalCmdCallback(const rm_vehicle_msgs::gimbalCmd::ConstPtr& msg
 
 void UartComm::visualServoCallback(const rm_cv_msgs::VisualServo::ConstPtr& msg)
 {
+    static const uint8_t len = sizeof(uart_header_t)+
+        sizeof(uart_target_t)+sizeof(uart_crc_t);
+
+    static const double tx_wait_time = len * 10. * 1.1 / this->baudrate;
+
     if(comm_status == COMM_ON)
     {
-        if((ros::Time::now() - last_write).toSec() < 1e-4)
+        if((ros::Time::now() - last_write).toSec() < tx_wait_time)
             return;
 
         std::cout<<"Delay:"<<(ros::Time::now() - msg->header.stamp).toSec()<<std::endl;
@@ -399,8 +409,9 @@ void UartComm::gimbalInfoRxProcess(void)
             if(check_timeout()) //Switch to sync mode
             {
                 ROS_WARN("Connection lost with device, trying re-connection...");
-                this->serial_port->flush();
+                this->serial_port->flushInput();
                 toggleSyncMode();
+                ros::Duration(0.05).sleep();
             }
         }
     }

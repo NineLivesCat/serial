@@ -109,8 +109,9 @@ protected:
 class UartComm : public CommBase
 {
 public:
-    UartComm(ros::NodeHandle& nh, serial::Serial* serial_port):
-        CommBase(nh), serial_port(serial_port),
+    UartComm(ros::NodeHandle& nh,
+        serial::Serial* serial_port, const uint32_t baudrate):
+        CommBase(nh), serial_port(serial_port), baudrate(baudrate),
         sync_attempt(0), last_write(ros::Time::now())
     {
         bool Use_hard_timestamp;
@@ -195,6 +196,7 @@ public:
 private:
     uint32_t sync_attempt;
     serial::Serial* serial_port;
+    uint32_t        baudrate;
 
     ros::Time last_write;
 
