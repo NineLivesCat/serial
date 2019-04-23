@@ -84,8 +84,8 @@ int main(int argc, char **argv)
     comm.gimbalInfo_pub = nh.advertise<rm_vehicle_msgs::gimbalInfo>("/rm_vehicle/gimbal_info", 10);
     comm.RC_pub = nh.advertise<rm_vehicle_msgs::RC>("/rm_vehicle/RC", 10);
 
-    ros::Subscriber gimbalCmd_sub = nh.subscribe("/RM_gimbal/control",10,
-        &UartComm::gimbalCmdCallback, &comm);
+    //ros::Subscriber gimbalCmd_sub = nh.subscribe("/RM_gimbal/control",10,
+    //    &UartComm::gimbalCmdCallback, &comm);
 
     ros::Subscriber visualServo_sub = nh.subscribe("/VI_position_cmd",10,
         &UartComm::visualServoCallback, &comm);

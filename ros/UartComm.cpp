@@ -5,18 +5,16 @@ void UartComm::gimbalCmdCallback(const rm_vehicle_msgs::gimbalCmd::ConstPtr& msg
     static const uint8_t len = sizeof(uart_header_t)+
         sizeof(uart_gimbal_cmd_t)+sizeof(uart_crc_t);
 
-    static const double tx_wait_time = len * 10. * 1.1 / this->baudrate;
+    static double tx_wait_time = len * 10. * 1.1 / this->baudrate;
 
     if(comm_status == COMM_ON)
     {
         if((ros::Time::now() - last_write).toSec() < tx_wait_time)
             return;
 
-        std::cout<<"Delay:"<<(ros::Time::now() - msg->header.stamp).toSec()<<std::endl;
-
         uint8_t txbuf[30];
-        uint8_t length = packGimbalCmd(txbuf, *msg);
-        this->serial_port->write(txbuf, length);
+        packGimbalCmd(txbuf, *msg);
+        this->serial_port->write(txbuf, len);
         last_write = ros::Time::now();
     }
     else if(comm_status == COMM_IDLE)
@@ -30,18 +28,16 @@ void UartComm::visualServoCallback(const rm_cv_msgs::VisualServo::ConstPtr& msg)
     static const uint8_t len = sizeof(uart_header_t)+
         sizeof(uart_target_t)+sizeof(uart_crc_t);
 
-    static const double tx_wait_time = len * 10. * 1.1 / this->baudrate;
+    static double tx_wait_time = len * 10. * 1.1 / this->baudrate;
 
     if(comm_status == COMM_ON)
     {
         if((ros::Time::now() - last_write).toSec() < tx_wait_time)
             return;
 
-        std::cout<<"Delay:"<<(ros::Time::now() - msg->header.stamp).toSec()<<std::endl;
-
         uint8_t txbuf[30];
-        uint8_t length = packTargetInfo(txbuf, *msg);
-        this->serial_port->write(txbuf, length);
+        packTargetInfo(txbuf, *msg);
+        this->serial_port->write(txbuf, len);
         last_write = ros::Time::now();
     }
     else if(comm_status == COMM_IDLE)
