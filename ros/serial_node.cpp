@@ -84,9 +84,6 @@ int main(int argc, char **argv)
     comm.gimbalInfo_pub = nh.advertise<rm_vehicle_msgs::gimbalInfo>("/rm_vehicle/gimbal_info", 10);
     comm.RC_pub = nh.advertise<rm_vehicle_msgs::RC>("/rm_vehicle/RC", 10);
 
-    //ros::Subscriber gimbalCmd_sub = nh.subscribe("/RM_gimbal/control",10,
-    //    &UartComm::gimbalCmdCallback, &comm);
-
     ros::Subscriber visualServo_sub = nh.subscribe("/VI_position_cmd",10,
         &UartComm::visualServoCallback, &comm);
 
@@ -97,8 +94,8 @@ int main(int argc, char **argv)
     ros::Duration(0.5).sleep();
     serial_host.flush();
 
-    boost::thread serialReadThd(boost::bind(&UartComm::gimbalInfoRxProcess, &comm));
-    serialReadThd.detach();
+    //boost::thread serialReadThd(boost::bind(&UartComm::gimbalInfoRxProcess, &comm));
+    //serialReadThd.detach();
 
     boost::thread heartbeatTxThd(boost::bind(&UartComm::heartbeatTxProcess, &comm));
     heartbeatTxThd.detach();
@@ -110,7 +107,7 @@ int main(int argc, char **argv)
     {
         if(comm.inSyncMode())//synchonization
         {
-            uint8_t length = sizeof(uart_header_t)+
+            static const uint8_t length = sizeof(uart_header_t)+
                 sizeof(uart_sync_t)+sizeof(uart_crc_t);
 
             comm.SendSyncSeq(tx_buffer, false);
@@ -131,6 +128,31 @@ int main(int argc, char **argv)
                 ROS_WARN("No data received from embedded device");
 
             comm.processGimbalInfo(rx_buffer, false);
+        }
+        else
+        {
+            static const uint8_t length = sizeof(uart_header_t)+
+                    sizeof(uart_gimbal_info_t)+sizeof(uart_crc_t);
+
+            if(comm.getStatus() >= UartComm::COMM_SEND_PARAM)
+            {
+                uint8_t rx_size = serial_host.read(rx_buffer, length);
+                if(rx_size == length)
+                {
+                    if(comm.getStatus() > UartComm::COMM_SEND_PARAM)
+                        comm.processGimbalInfo(rx_buffer, true);
+                    else
+                        comm.processParamResponse(rx_buffer);
+                }
+
+                if(comm.check_timeout()) //Switch to sync mode
+                {
+                    ROS_WARN("Connection lost with device, trying re-connection...");
+                    serial_host.flushInput();
+                    comm.toggleSyncMode();
+                    ros::Duration(0.05).sleep();
+                }
+            }
         }
 
         ros::spinOnce();

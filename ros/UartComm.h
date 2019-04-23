@@ -67,6 +67,11 @@ public:
         comm_status = COMM_SEND_PARAM;
     }
 
+    comm_status_t getStatus(void)
+    {
+        return comm_status;
+    }
+
     User_Command cmd;
 
 protected:
