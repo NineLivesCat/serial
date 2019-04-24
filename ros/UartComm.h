@@ -166,6 +166,17 @@ public:
         CommBase::toggleSyncMode();
     }
 
+    void toggleRXMode(void)
+    {
+	if(comm_status == COMM_SYNC_0)
+        {
+            serial::Timeout stable_timeout = serial::Timeout::simpleTimeout(50);
+            this->serial_port->setTimeout(stable_timeout);
+        }
+
+        CommBase::toggleRXMode();
+    }
+
     /*
      * @brief:  convert ros::Time to uart synchonization packet data
      * @return: length of tx bufffer
