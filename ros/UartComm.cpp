@@ -212,11 +212,14 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
         uart_header_t* header = (uart_header_t*)&rxbuf[0];
         if(rxbuf[0] != UART_START_BYTE || !verify_crc(rxbuf, len) || header->type != UART_GIMBAL_INFO_ID)
         {
-            ROS_WARN("Incorrect data frame received");
+            ROS_WARN("Incorrect data frame received 1");
 
             frame_err_cnt++;
             if(frame_err_cnt > 5)
+            {
+                ROS_WARN("Broken frames exceed threshold, trying re-connection...");
                 toggleSyncMode();
+            }
             return;
         }
 

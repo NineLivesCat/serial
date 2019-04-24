@@ -144,6 +144,8 @@ int main(int argc, char **argv)
                     else
                         comm.processParamResponse(rx_buffer);
                 }
+                else
+                    ROS_WARN("Incorrect frame received 0");
 
                 if(comm.check_timeout()) //Switch to sync mode
                 {
