@@ -106,8 +106,7 @@ uint8_t UartComm::processSyncSeq(uint8_t rxbuf[])
     }
     else if(comm_status < COMM_SYNC_1)
     {
-        serial::Timeout stable_timeout = serial::Timeout::simpleTimeout(50);
-        this->serial_port->setTimeout(stable_timeout);
+        this->serial_port->setTimeout(this->stable_timeout);
 
         ROS_INFO("Synchonizing with device");
         comm_status = COMM_SYNC_1;
@@ -302,11 +301,14 @@ void UartComm::processParamResponse(uint8_t rxbuf[])
     }
     else
     {
-        ROS_WARN("Incorrect data frame received");
+        ROS_WARN("Incorrect data frame received 1");
 
         frame_err_cnt++;
         if(frame_err_cnt > 5)
+        {
+            ROS_WARN("Broken frames exceed threshold, trying re-connection...");
             toggleSyncMode();
+        }
         return;
     }
 }

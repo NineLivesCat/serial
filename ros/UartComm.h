@@ -9,6 +9,8 @@
 #include "rm_vehicle_msgs/gimbalCmd.h"
 #include "rm_vehicle_msgs/RC.h"
 
+//#define USE_IDLE_DETECTION
+
 struct User_Command
 {
     bool reset;
@@ -127,7 +129,19 @@ public:
         this->use_hard_timestamp = Use_hard_timestamp;
         this->dt = ros::Duration(dts);
 
+        //Configure timeout here
+
+        #ifdef USE_IDLE_DETECTION
+            stable_timeout   = serial::Timeout(3, 50,  0, 50,  0);
+            unstable_timeout = serial::Timeout(3,  4,  0,  4,  0);
+        #else
+            stable_timeout   = serial::Timeout::simpleTimeout(50);
+            unstable_timeout = serial::Timeout::simpleTimeout(4);
+        #endif
+
+        this->serial_port->setTimeout(this->unstable_timeout);
         ROS_INFO("Starting UART host");
+
         comm_status = COMM_UNINIT;
     }
 
@@ -158,23 +172,9 @@ public:
     void toggleSyncMode(void)
     {
         if(comm_status > COMM_SYNC_0)
-        {
-            serial::Timeout unstable_timeout = serial::Timeout::simpleTimeout(4);
-            this->serial_port->setTimeout(unstable_timeout);
-        }
+            this->serial_port->setTimeout(this->unstable_timeout);
 
         CommBase::toggleSyncMode();
-    }
-
-    void toggleRXMode(void)
-    {
-	if(comm_status == COMM_SYNC_0)
-        {
-            serial::Timeout stable_timeout = serial::Timeout::simpleTimeout(50);
-            this->serial_port->setTimeout(stable_timeout);
-        }
-
-        CommBase::toggleRXMode();
     }
 
     /*
@@ -215,6 +215,9 @@ private:
     uint32_t        baudrate;
 
     ros::Time last_write;
+
+    serial::Timeout unstable_timeout;
+    serial::Timeout stable_timeout;
 
     ros::Time restore_timeStamp32(uint16_t rx_time)
     {

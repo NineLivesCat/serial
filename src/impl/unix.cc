@@ -487,11 +487,12 @@ Serial::SerialImpl::available ()
   if (-1 == ioctl (fd_, TIOCINQ, &count)) {
       THROW (IOException, errno);
   } else {
+      //printf("count: %d\n", count);
       return static_cast<size_t> (count);
   }
 }
 
-bool
+uint8_t
 Serial::SerialImpl::waitReadable (uint32_t timeout)
 {
   // Setup a select call to block for serial data or a timeout
@@ -501,17 +502,18 @@ Serial::SerialImpl::waitReadable (uint32_t timeout)
   timespec timeout_ts (timespec_from_ms (timeout));
   int r = pselect (fd_ + 1, &readfds, NULL, NULL, &timeout_ts, NULL);
 
+  //printf("R: %d\n", r);
   if (r < 0) {
     // Select was interrupted
     if (errno == EINTR) {
-      return false;
+      return 1;
     }
     // Otherwise there was some error
     THROW (IOException, errno);
   }
   // Timeout occurred
   if (r == 0) {
-    return false;
+    return 2;
   }
   // This shouldn't happen, if r > 0 our fd has to be in the list!
   if (!FD_ISSET (fd_, &readfds)) {
@@ -519,7 +521,40 @@ Serial::SerialImpl::waitReadable (uint32_t timeout)
            " in the list, this shouldn't happen!");
   }
   // Data available to read.
-  return true;
+  return 0;
+}
+
+uint8_t
+Serial::SerialImpl::waitReadableIdleBytes (const size_t idle_bytes)
+{
+  // Setup a select call to block for serial data or a timeout
+  fd_set readfds;
+  FD_ZERO (&readfds);
+  FD_SET (fd_, &readfds);
+  timespec timeout_ts = { 0, static_cast<long>(byte_time_ns_ * idle_bytes)};
+  int r = pselect (fd_ + 1, &readfds, NULL, NULL, &timeout_ts, NULL);
+
+  //printf("r: %d\n", r);
+  if (r < 0) {
+    // Select was interrupted
+    if (errno == EINTR) {
+      return 1;
+    }
+
+    // Otherwise there was some error
+    THROW (IOException, errno);
+  }
+  // Timeout occurred
+  if (r == 0) {
+    return 2;
+  }
+  // This shouldn't happen, if r > 0 our fd has to be in the list!
+  if (!FD_ISSET (fd_, &readfds)) {
+    THROW (IOException, "select reports ready to read, but our fd isn't"
+           " in the list, this shouldn't happen!");
+  }
+  // Data available to read.
+  return 0;
 }
 
 void
@@ -544,28 +579,43 @@ Serial::SerialImpl::read (uint8_t *buf, size_t size)
   MillisecondTimer total_timeout(total_timeout_ms);
 
   // Pre-fill buffer with available bytes
+  if(!waitReadable(total_timeout_ms))
   {
     ssize_t bytes_read_now = ::read (fd_, buf, size);
     if (bytes_read_now > 0) {
       bytes_read = bytes_read_now;
     }
+    //printf("Read0: %d, %d\n", static_cast<size_t>(bytes_read_now),
+    //  static_cast<size_t>(bytes_read));
   }
 
-  while (bytes_read < size) {
+  while (bytes_read < size)
+  {
     int64_t timeout_remaining_ms = total_timeout.remaining();
-    if (timeout_remaining_ms <= 0) {
-      // Timed out
+    if (timeout_remaining_ms <= 0)
+      // Read timeout occured
       break;
-    }
+
     // Timeout for the next select is whichever is less of the remaining
     // total read timeout and the inter-byte timeout.
-    uint32_t timeout = std::min(static_cast<uint32_t> (timeout_remaining_ms),
-                                timeout_.inter_byte_timeout);
+    uint8_t wait_result;
+    uint32_t timeout   = static_cast<uint32_t> (timeout_remaining_ms);
+    uint32_t idle_time = byte_time_ns_ * timeout_.inter_byte_timeout;
+    if(timeout * 1000000 < idle_time)
+        wait_result = waitReadable(timeout);
+    else{
+        wait_result = waitReadableIdleBytes(timeout_.inter_byte_timeout);
+         //printf("Idle: %d\n", wait_result);
+        if(wait_result == 2)
+            break; //Idle timeout occured
+    }
+
     // Wait for the device to be readable, and then attempt to read.
-    if (waitReadable(timeout)) {
+    if (!wait_result) {
       // If it's a fixed-length multi-byte read, insert a wait here so that
       // we can attempt to grab the whole thing in a single IO call. Skip
       // this wait if a non-max inter_byte_timeout is specified.
+
       if (size > 1 && timeout_.inter_byte_timeout == Timeout::max()) {
         size_t bytes_available = available();
         if (bytes_available + bytes_read < size) {
@@ -575,7 +625,10 @@ Serial::SerialImpl::read (uint8_t *buf, size_t size)
       // This should be non-blocking returning only what is available now
       //  Then returning so that select can block again.
       ssize_t bytes_read_now =
-        ::read (fd_, buf + bytes_read, size - bytes_read);
+        ::read (fd_, buf + bytes_read, 1);
+
+      //printf("Read1: %d, %d\n", static_cast<size_t>(bytes_read_now),
+      //static_cast<size_t>(bytes_read));
       // read should always return some data as select reported it was
       // ready to read when we get to this point.
       if (bytes_read_now < 1) {

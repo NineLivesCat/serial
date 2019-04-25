@@ -86,8 +86,11 @@ public:
   size_t
   available ();
 
-  bool
+  uint8_t
   waitReadable (uint32_t timeout);
+
+  uint8_t
+  waitReadableIdleBytes(const size_t idle_bytes);
 
   void
   waitByteTimes (size_t count);

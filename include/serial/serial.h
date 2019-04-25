@@ -113,7 +113,7 @@ struct Timeout {
     return Timeout(max(), timeout, 0, timeout, 0);
   }
 
-  /*! Number of milliseconds between bytes received to timeout on. */
+  /*! Number of bytes received to timeout on. */
   uint32_t inter_byte_timeout;
   /*! A constant number of milliseconds to wait after calling read. */
   uint32_t read_timeout_constant;

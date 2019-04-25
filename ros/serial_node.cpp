@@ -70,10 +70,7 @@ int main(int argc, char **argv)
     nh.param<int>   ("/serial_node/max_len",  max_len,       30);
     nh.param<double>("/serial_node/timeout",  timeout_ms,   0.3);
 
-    serial::Timeout timeout(1, 1, 0, 0, 0),
-                    timeout_sync = serial::Timeout::simpleTimeout(4);
-
-    serial::Serial serial_host(port, baud, timeout_sync);
+    serial::Serial serial_host(port, baud, serial::Timeout::simpleTimeout(4));
     if(serial_host.isOpen())
     {
         serial_host.flush();
@@ -136,7 +133,7 @@ int main(int argc, char **argv)
 
             if(comm.getStatus() >= UartComm::COMM_SEND_PARAM)
             {
-                uint8_t rx_size = serial_host.read(rx_buffer, length);
+                rx_size = serial_host.read(rx_buffer, length);
                 if(rx_size == length)
                 {
                     if(comm.getStatus() > UartComm::COMM_SEND_PARAM)
