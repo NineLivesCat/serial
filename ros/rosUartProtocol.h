@@ -5,7 +5,7 @@
  *   NOTE: This header file is shared among
  *   robomaster computer(s) & MCU(s)
  *   =======SHOULD CHECK THE VERSION NUMBER BEFORE USE======
- *   =======VERSION: 2019.04.01=============================
+ *   =======VERSION: 2019.05.15=============================
  */
 #define UART_PROTOCOL_VERSION     0x01
 #define UART_START_BYTE           0xAA
@@ -21,9 +21,8 @@
 #define UART_ROS_RESPONSE_ID      0x0B
 #define UART_INVALID_ID           0xFF
 
-#define GIMBAL_INFO_ANGVEL_PSC     900
-#define GIMBAL_INFO_ANG_PSC      10000
-#define GIMBAL_CMD_ANGVEL_PSC      900
+#define GIMBAL_INFO_ANG_PSC      20000
+#define GIMBAL_CMD_ANGVEL_PSC     1000
 
 #define TARGET_POS_PSC           40000
 #define TARGET_VEL_PSC            4000
@@ -54,15 +53,14 @@ typedef struct
 
 typedef struct
 {
-    uint16_t timeStamp_16;      //Send -1 to respond to parameter packet
+    uint16_t timeStamp_16;         //Send -1 to respond to parameter packet
     uint8_t  bullet_speed  : 5;
-    uint8_t  cv_mode       : 1;     //0-armor, 1-rune
-    uint8_t  cv_reset_cmd  : 1;     //set 1 to restart ROS cv nodes
+    uint8_t  cv_mode       : 1;    //0-armor, 1-rune
+    uint8_t  cv_reset_cmd  : 1;    //set 1 to restart ROS cv nodes
     uint8_t  cv_enable_cmd : 1;
-    int16_t  yaw;
+    int16_t  yaw;                  //real range: -pi ~ pi
     int16_t  pitch;
-    int16_t  gimbal_pitch_angle;
-    int16_t  ang_vel[3];
+    int16_t  roll;
 } __attribute__((packed)) uart_gimbal_info_t;
 
 typedef struct

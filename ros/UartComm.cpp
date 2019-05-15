@@ -237,12 +237,9 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
             RCMsg.    header.stamp = ros::Time::now() - dt;
         }
 
-        gimbalMsg.imu_yaw      = (float)(gimbal.yaw)/GIMBAL_INFO_ANG_PSC;
+        gimbalMsg.imu_yaw      = (float)(gimbal.yaw  )/GIMBAL_INFO_ANG_PSC;
         gimbalMsg.imu_pitch    = (float)(gimbal.pitch)/GIMBAL_INFO_ANG_PSC;
-        gimbalMsg.gimbal_pitch = (float)(gimbal.gimbal_pitch_angle)/GIMBAL_INFO_ANG_PSC;
-        gimbalMsg.imu_w.x      = (float)(gimbal.ang_vel[0])/GIMBAL_INFO_ANGVEL_PSC;
-        gimbalMsg.imu_w.y      = (float)(gimbal.ang_vel[1])/GIMBAL_INFO_ANGVEL_PSC;
-        gimbalMsg.imu_w.z      = (float)(gimbal.ang_vel[2])/GIMBAL_INFO_ANGVEL_PSC;
+        gimbalMsg.gimbal_pitch = (float)(gimbal.roll )/GIMBAL_INFO_ANG_PSC;
 
         gimbalMsg.bullet_speed = gimbal.bullet_speed;
         RCMsg  .control_enable = gimbal.cv_enable_cmd;
