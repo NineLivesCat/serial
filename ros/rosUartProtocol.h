@@ -65,7 +65,7 @@ typedef struct
 
 typedef struct
 {
-    uint8_t  reserve[13];
+    uint8_t  reserve[7];
     uint16_t content;      //Send -1 to respond to parameter packet
 } __attribute__((packed)) uart_param_response_t;
 
