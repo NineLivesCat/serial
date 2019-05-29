@@ -241,6 +241,10 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
         gimbalMsg.pitch = (float)(gimbal.pitch)/GIMBAL_INFO_ANG_PSC;
         gimbalMsg.roll  = (float)(gimbal.roll )/GIMBAL_INFO_ANG_PSC;
 
+        gimbalMsg.imu_w.x = (float)(gimbal.imu_w[0])/GIMBAL_CMD_ANGVEL_PSC;
+        gimbalMsg.imu_w.y = (float)(gimbal.imu_w[1])/GIMBAL_CMD_ANGVEL_PSC;
+        gimbalMsg.imu_w.z = (float)(gimbal.imu_w[2])/GIMBAL_CMD_ANGVEL_PSC;
+
         gimbalMsg.bullet_speed = gimbal.bullet_speed;
         RCMsg  .control_enable = gimbal.cv_enable_cmd;
 
