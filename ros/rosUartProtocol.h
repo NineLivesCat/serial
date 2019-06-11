@@ -5,7 +5,7 @@
  *   NOTE: This header file is shared among
  *   robomaster computer(s) & MCU(s)
  *   =======SHOULD CHECK THE VERSION NUMBER BEFORE USE======
- *   =======VERSION: 2019.05.22=============================
+ *   =======VERSION: 2019.06.08=============================
  */
 #define UART_PROTOCOL_VERSION     0x01
 #define UART_START_BYTE           0xAA
@@ -23,6 +23,7 @@
 
 #define GIMBAL_INFO_ANG_PSC      10000
 #define GIMBAL_CMD_ANGVEL_PSC     1000
+#define BULLET_SPEED_MIN           10U
 
 #define TARGET_POS_PSC           40000
 #define TARGET_VEL_PSC            4000
@@ -54,19 +55,22 @@ typedef struct
 typedef struct
 {
     uint16_t timeStamp_16;         //Send -1 to respond to parameter packet
-    uint8_t  bullet_speed  : 5;
-    uint8_t  cv_mode       : 1;    //0-armor, 1-rune
-    uint8_t  cv_reset_cmd  : 1;    //set 1 to restart ROS cv nodes
-    uint8_t  cv_enable_cmd : 1;
+    uint8_t  bullet_speed  : 6;
+    uint8_t  cv_mode       : 2;    //0-armor, 1-rune, 2-siege
     int16_t  yaw;                  //real range: -pi ~ pi
     int16_t  pitch;
     int16_t  roll;
+    int8_t   rc_x;
+    int8_t   rc_y;
+    uint8_t  rc_enable_cv  : 1;
+    uint8_t  rc_reset_cv   : 1;
+    uint8_t  rc_reserve    : 6;
     int16_t  imu_w[3];
 } __attribute__((packed)) uart_gimbal_info_t;
 
 typedef struct
 {
-    uint8_t  reserve[13];
+    uint8_t  reserve[16];
     uint16_t content;      //Send -1 to respond to parameter packet
 } __attribute__((packed)) uart_param_response_t;
 

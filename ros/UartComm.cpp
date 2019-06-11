@@ -245,14 +245,17 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
         gimbalMsg.imu_w.y = (float)(gimbal.imu_w[1])/GIMBAL_CMD_ANGVEL_PSC;
         gimbalMsg.imu_w.z = (float)(gimbal.imu_w[2])/GIMBAL_CMD_ANGVEL_PSC;
 
-        gimbalMsg.bullet_speed = gimbal.bullet_speed;
-        RCMsg  .control_enable = gimbal.cv_enable_cmd;
+        gimbalMsg.bullet_speed = gimbal.bullet_speed + BULLET_SPEED_MIN;
+        RCMsg  .control_enable = gimbal.rc_enable_cv;
+        RCMsg  .cv_mode = gimbal.cv_mode;
+        RCMsg  .rc_x  = gimbal.rc_x/128.0;
+        RCMsg  .rc_y  = gimbal.rc_y/128.0;
 
         gimbalMsg.valid = valid; //bullet_speed = 0 means gimbal not initialized
         RCMsg    .valid = valid;
 
         //Process user input command
-        cmd.reset = gimbal.cv_reset_cmd;
+        cmd.reset = gimbal.rc_reset_cv;
 
         static bool rune_mode = false;
         if(!rune_mode && gimbal.cv_mode == 1)
