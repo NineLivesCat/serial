@@ -25,6 +25,8 @@ using std::cerr;
 using std::endl;
 using std::vector;
 
+bool use_sync;
+
 void MasterCtrlProcess(ros::NodeHandle& nh, UartComm* comm)
 {
     ros::ServiceClient armor_ctrl = nh.serviceClient<rm_vehicle_msgs::cvEnable>("/Armor_Node_Enable");
@@ -66,6 +68,7 @@ int main(int argc, char **argv)
     double   timeout_ms;
 
     nh.param<std::string>("/serial_node/port", port, "/dev/ttyUSB0");
+    nh.param<bool>  ("/serial_node/use_sync", use_sync,    true);
     nh.param<int>   ("/serial_node/baudrate", baud,      230400);
     nh.param<int>   ("/serial_node/max_len",  max_len,       30);
     nh.param<double>("/serial_node/timeout",  timeout_ms,   0.3);
@@ -107,24 +110,33 @@ int main(int argc, char **argv)
             static const uint8_t length = sizeof(uart_header_t)+
                 sizeof(uart_sync_t)+sizeof(uart_crc_t);
 
-            comm.SendSyncSeq(tx_buffer, false);
-            rx_size = serial_host.read(rx_buffer, length);
-            if(rx_size == length)
+            comm.processGimbalInfo(rx_buffer, false);
+
+            if(use_sync)
             {
-                if(!comm.processSyncSeq(rx_buffer))
+                comm.SendSyncSeq(tx_buffer, false);
+                rx_size = serial_host.read(rx_buffer, length);
+                if(rx_size == length)
                 {
-                    comm.SendSyncSeq(tx_buffer, true);
-                    comm.toggleRXMode();
+                    if(!comm.processSyncSeq(rx_buffer))
+                    {
+                        comm.SendSyncSeq(tx_buffer, true);
+                        comm.toggleRXMode();
+                    }
                 }
+                else
+                    comm.toggleSyncMode();
+
+                static uint32_t noData_cnt;
+                if(!rx_size && !(++noData_cnt % 50))
+                    ROS_WARN("No data received from embedded device");
             }
             else
-                comm.toggleSyncMode();
-
-            static uint32_t noData_cnt;
-            if(!rx_size && !(++noData_cnt % 50))
-                ROS_WARN("No data received from embedded device");
-
-            comm.processGimbalInfo(rx_buffer, false);
+            {
+                comm.SendSyncSeq(tx_buffer, true);
+                ros::Duration(0.05).sleep();
+                comm.toggleRXMode();
+            }
         }
         else
         {
