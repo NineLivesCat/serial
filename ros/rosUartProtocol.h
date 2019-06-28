@@ -5,9 +5,9 @@
  *   NOTE: This header file is shared among
  *   robomaster computer(s) & MCU(s)
  *   =======SHOULD CHECK THE VERSION NUMBER BEFORE USE======
- *   =======VERSION: 2019.06.08=============================
+ *   =======VERSION: 2019.06.28=============================
  */
-#define UART_PROTOCOL_VERSION     0x01
+#define UART_PROTOCOL_VERSION     0x02
 #define UART_START_BYTE           0xAA
 #define UART_CHECKSUM_OFFSET      0xA5
 
@@ -78,7 +78,7 @@ typedef struct
 {
     float VS_kp;
     float VS_kd;
-    float VS_ff;
+    float VS_sd;
 } __attribute__((packed)) uart_ros_param_t;
 
 typedef struct
@@ -88,7 +88,8 @@ typedef struct
     int16_t  pitch_velCmd;
     uint8_t  shootMode   : 3;
     uint8_t  valid       : 1;
-    uint8_t  mode_reserve: 4;
+    uint8_t  scaleDown   : 1;
+    uint8_t  mode_reserve: 3;
     uint8_t  reserve;
 } __attribute__((packed)) uart_gimbal_cmd_t;
 
@@ -101,7 +102,8 @@ typedef struct
     int16_t  y_vel;
     uint8_t  shootMode   : 3;
     uint8_t  valid       : 1;
-    uint8_t  mode_reserve: 4;
+    uint8_t  scaleDown   : 1;
+    uint8_t  mode_reserve: 3;
 } __attribute__((packed)) uart_target_t;
 
 #endif

@@ -160,6 +160,7 @@ uint8_t UartComm::packTargetInfo(uint8_t txbuf[], const rm_cv_msgs::VisualServo 
     cmd.y_vel        = (float)(msg.dy)*TARGET_VEL_PSC;
     cmd.valid        = msg.valid;
     cmd.shootMode    = msg.shootMode;
+    cmd.scaleDown    = msg.scaleDown;
 
     uint8_t* txptr = txbuf;
     memcpy(txptr, &header, sizeof(uart_header_t));
@@ -186,6 +187,7 @@ uint8_t UartComm::packGimbalCmd(uint8_t txbuf[], const rm_vehicle_msgs::gimbalCm
     cmd.pitch_velCmd = msg.pitch_cmd * GIMBAL_CMD_ANGVEL_PSC;
     cmd.valid        = msg.valid;
     cmd.shootMode    = msg.shootMode;
+    cmd.scaleDown    = msg.scaleDown;
 
     uint8_t* txptr = txbuf;
     memcpy(txptr, &header, sizeof(uart_header_t));
@@ -346,13 +348,13 @@ uint8_t UartComm::sendParameters(uint8_t txbuf[])
         return -1;
     }
 
-    float vs_ff;
-    if (!ros::param::get("/serial_node/control/VS_ff", vs_ff))
-        vs_ff = 0.0;
+    float vs_sd;
+    if (!ros::param::get("/serial_node/control/VS_sd", vs_sd))
+        vs_sd = 0.0;
 
     param.VS_kp = vs_kp;
     param.VS_kd = vs_kd;
-    param.VS_ff = vs_ff;
+    param.VS_sd = vs_sd;
 
     uint8_t* txptr = txbuf;
     memcpy(txptr, &header, sizeof(uart_header_t));
