@@ -350,7 +350,7 @@ uint8_t UartComm::sendParameters(uint8_t txbuf[])
 
     float vs_sd;
     if (!ros::param::get("/serial_node/control/VS_sd", vs_sd))
-        vs_sd = 0.0;
+        vs_sd = 1.0;
 
     param.VS_kp = vs_kp;
     param.VS_kd = vs_kd;
