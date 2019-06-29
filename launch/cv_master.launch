@@ -11,7 +11,8 @@
 
         <param name="control/VS_kp"             type="double" value="18"/>
         <param name="control/VS_kd"             type="double" value="0.6"/>
-        <param name="control/VS_sd"             type="double" value="0.45"/>
+        <param name="control/VS_sd"             type="double" value="0.5"/>
     </node>
 
 </launch>
+z
