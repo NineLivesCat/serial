@@ -77,7 +77,7 @@ int main(int argc, char **argv)
     if(serial_host.isOpen())
     {
         serial_host.flush();
-        ROS_INFO("Connected to port %s", port);
+        ROS_INFO("Connected to port %s", port.c_str());
     }
 
     UartComm comm(nh, &serial_host, baud);
