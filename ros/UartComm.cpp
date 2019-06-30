@@ -153,8 +153,8 @@ uint8_t UartComm::packTargetInfo(uint8_t txbuf[], const rm_cv_msgs::VisualServo 
     //For gen1 visual servo, send target pos only
     cmd.z_pos_0        = (float)(msg.z0 )*TARGET_POS_PSC;
     cmd.y_pos_0        = (float)(msg.y0 )*TARGET_POS_PSC;
-    cmd.z_pos_1        = (float)(msg.z1 )*TARGET_VEL_PSC;
-    cmd.y_pos_1        = (float)(msg.y1 )*TARGET_VEL_PSC;
+    cmd.z_pos_1        = (float)(msg.z1 )*TARGET_POS_PSC;
+    cmd.y_pos_1        = (float)(msg.y1 )*TARGET_POS_PSC;
     cmd.z_vel        = (float)(msg.dz)*TARGET_VEL_PSC;
     cmd.y_vel        = (float)(msg.dy)*TARGET_VEL_PSC;
     cmd.valid        = msg.valid;
@@ -226,17 +226,8 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
         uart_gimbal_info_t gimbal;
         memcpy(&gimbal, &rxbuf[sizeof(uart_header_t)], sizeof(uart_gimbal_info_t));
 
-        if(this->use_hard_timestamp)
-        {
-            ros::Time stamp = restore_timeStamp32(gimbal.timeStamp_16);
-            gimbalMsg.header.stamp = stamp;
-            RCMsg.    header.stamp = stamp;
-        }
-        else
-        {
-            gimbalMsg.header.stamp = ros::Time::now() - dt;
-            RCMsg.    header.stamp = ros::Time::now() - dt;
-        }
+        gimbalMsg.header.stamp = ros::Time::now() - dt;
+        RCMsg.    header.stamp = ros::Time::now() - dt;
 
         gimbalMsg.yaw   = (float)(gimbal.yaw  )/GIMBAL_INFO_ANG_PSC;
         gimbalMsg.pitch = (float)(gimbal.pitch)/GIMBAL_INFO_ANG_PSC;
@@ -246,8 +237,9 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
         gimbalMsg.imu_w.y = (float)(gimbal.imu_w[1])/GIMBAL_CMD_ANGVEL_PSC;
         gimbalMsg.imu_w.z = (float)(gimbal.imu_w[2])/GIMBAL_CMD_ANGVEL_PSC;
 
-        gimbalMsg.bullet_speed = gimbal.bullet_speed + BULLET_SPEED_MIN;
-        RCMsg  .control_enable = gimbal.rc_enable_cv;
+        gimbalMsg.bullet_speed_0 = gimbal.bullet_speed_0;
+        gimbalMsg.bullet_speed_1 = gimbal.bullet_speed_1;
+        RCMsg  .control_enable   = gimbal.rc_enable_cv;
         RCMsg  .cv_mode = gimbal.cv_mode;
         RCMsg  .rc_x  = gimbal.rc_x/128.0;
         RCMsg  .rc_y  = gimbal.rc_y/128.0;

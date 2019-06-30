@@ -11,8 +11,8 @@
 
         <param name="control/VS_kp_Pitch"       type="double" value="18"/>
         <param name="control/VS_kd_Pitch"       type="double" value="0.6"/>
-        <param name="control/VS_kp_Yaw"         type="double" value="20"/>
-        <param name="control/VS_kd_Yaw"         type="double" value="0.7"/>
+        <param name="control/VS_kp_Yaw"         type="double" value="18"/>
+        <param name="control/VS_kd_Yaw"         type="double" value="0.6"/>
         <param name="control/VS_sd"             type="double" value="0.5"/>
     </node>
 
