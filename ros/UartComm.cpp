@@ -150,16 +150,16 @@ uint8_t UartComm::packTargetInfo(uint8_t txbuf[], const rm_cv_msgs::VisualServo 
 
     uart_target_t cmd;
 
-    uint32_t timestamp = (msg.header.stamp - sync_time).toNSec()/1e6;
-    cmd.timeStamp_16 = (uint16_t)(timestamp & 0x0000FFFF);
-
     //For gen1 visual servo, send target pos only
-    cmd.z_pos        = (float)(msg.z )*TARGET_POS_PSC;
-    cmd.y_pos        = (float)(msg.y )*TARGET_POS_PSC;
+    cmd.z_pos_0        = (float)(msg.z0 )*TARGET_POS_PSC;
+    cmd.y_pos_0        = (float)(msg.y0 )*TARGET_POS_PSC;
+    cmd.z_pos_1        = (float)(msg.z1 )*TARGET_VEL_PSC;
+    cmd.y_pos_1        = (float)(msg.y1 )*TARGET_VEL_PSC;
     cmd.z_vel        = (float)(msg.dz)*TARGET_VEL_PSC;
     cmd.y_vel        = (float)(msg.dy)*TARGET_VEL_PSC;
     cmd.valid        = msg.valid;
-    cmd.shootMode    = msg.shootMode;
+    cmd.shootMode_0  = msg.shootMode_0;
+    cmd.shootMode_1  = msg.shootMode_1;
     cmd.scaleDown    = msg.scaleDown;
 
     uint8_t* txptr = txbuf;
@@ -181,12 +181,11 @@ uint8_t UartComm::packGimbalCmd(uint8_t txbuf[], const rm_vehicle_msgs::gimbalCm
 
     uart_gimbal_cmd_t cmd;
 
-    uint32_t timestamp = (msg.header.stamp - sync_time).toNSec()/1e6;
-    cmd.timeStamp_16 = (uint16_t)(timestamp & 0x0000FFFF);
     cmd.yaw_velCmd   = msg.yaw_cmd * GIMBAL_CMD_ANGVEL_PSC;
     cmd.pitch_velCmd = msg.pitch_cmd * GIMBAL_CMD_ANGVEL_PSC;
     cmd.valid        = msg.valid;
-    cmd.shootMode    = msg.shootMode;
+    cmd.shootMode_0  = msg.shootMode_0;
+    cmd.shootMode_1  = msg.shootMode_1;
     cmd.scaleDown    = msg.scaleDown;
 
     uint8_t* txptr = txbuf;
@@ -333,16 +332,29 @@ uint8_t UartComm::sendParameters(uint8_t txbuf[])
     header.type  = UART_ROS_PARAM_ID;
 
     uart_ros_param_t param;
+    float vs_kp_p;
+    if (!ros::param::get("/serial_node/control/VS_kp_Pitch", vs_kp_p))
+    {
+        ROS_FATAL("Param VS_KP_P not found!");
+        return -1;
+    }
 
-    float vs_kp;
-    if (!ros::param::get("/serial_node/control/VS_kp", vs_kp))
+    float vs_kd_p;
+    if (!ros::param::get("/serial_node/control/VS_kd_Pitch", vs_kd_p))
+    {
+        ROS_FATAL("Param VS_KD_P not found!");
+        return -1;
+    }
+
+    float vs_kp_y;
+    if (!ros::param::get("/serial_node/control/VS_kp_Yaw", vs_kp_y))
     {
         ROS_FATAL("Param VS_KP not found!");
         return -1;
     }
 
-    float vs_kd;
-    if (!ros::param::get("/serial_node/control/VS_kd", vs_kd))
+    float vs_kd_y;
+    if (!ros::param::get("/serial_node/control/VS_kd_Yaw", vs_kd_y))
     {
         ROS_FATAL("Param VS_KD not found!");
         return -1;
@@ -352,9 +364,11 @@ uint8_t UartComm::sendParameters(uint8_t txbuf[])
     if (!ros::param::get("/serial_node/control/VS_sd", vs_sd))
         vs_sd = 1.0;
 
-    param.VS_kp = vs_kp;
-    param.VS_kd = vs_kd;
-    param.VS_sd = vs_sd;
+    param.VS_kp_p = vs_kp_p;
+    param.VS_kd_p = vs_kd_p;
+    param.VS_kp_y = vs_kp_y;
+    param.VS_kd_y = vs_kd_y;
+    param.VS_sd   = vs_sd;
 
     uint8_t* txptr = txbuf;
     memcpy(txptr, &header, sizeof(uart_header_t));
