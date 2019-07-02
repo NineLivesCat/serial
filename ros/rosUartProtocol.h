@@ -5,7 +5,7 @@
  *   NOTE: This header file is shared among
  *   robomaster computer(s) & MCU(s)
  *   =======SHOULD CHECK THE VERSION NUMBER BEFORE USE======
- *   =======VERSION: 2019.06.30=============================
+ *   =======VERSION: 2019.07.03=============================
  */
 #define UART_PROTOCOL_VERSION     0x02
 #define UART_START_BYTE           0xAA
@@ -21,6 +21,7 @@
 #define UART_ROS_RESPONSE_ID      0x0B
 #define UART_INVALID_ID           0xFF
 
+#define GIMBAL_QUATERNION_PSC    32767
 #define GIMBAL_INFO_ANG_PSC      10000
 #define GIMBAL_CMD_ANGVEL_PSC     1000
 
@@ -55,15 +56,19 @@ typedef struct
 {
     uint8_t  bullet_speed_0;
     uint8_t  bullet_speed_1;
+<<<<<<< HEAD
     uint8_t  cv_mode       ;    //0-armor, 1-rune, 2-siege
+=======
+    uint8_t  cv_mode;              //0-armor, 1-rune, 2-siege
+>>>>>>> acf622dff1f0d7ae6233f0bc6969ff37c5f65406
     int16_t  yaw;                  //real range: -pi ~ pi
     int16_t  pitch;
     int16_t  roll;
     int8_t   rc_x;
     int8_t   rc_y;
-    uint8_t  rc_enable_cv  : 1;
-    uint8_t  rc_reset_cv   : 1;
-    uint8_t  rc_reserve    : 6;
+    uint8_t  rc_enable_cv   : 1;
+    uint8_t  rc_reset_cv    : 1;
+    uint8_t  rc_reserve     : 6;
     int16_t  imu_w[3];
 } __attribute__((packed)) uart_gimbal_info_t;
 
@@ -84,13 +89,14 @@ typedef struct
 
 typedef struct
 {
-    int16_t  yaw_velCmd;
-    int16_t  pitch_velCmd;
+    int16_t  qw;
+    int16_t  qx;
+    int16_t  qy;
+    int16_t  qz;
     uint8_t  shootMode_0 : 3;
     uint8_t  shootMode_1 : 3;
     uint8_t  valid       : 1;
-    uint8_t  scaleDown   : 1;
-    uint8_t  reserve;
+    uint8_t  reserve     : 1;
 } __attribute__((packed)) uart_gimbal_cmd_t;
 
 typedef struct

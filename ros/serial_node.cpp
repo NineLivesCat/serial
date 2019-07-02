@@ -77,7 +77,7 @@ int main(int argc, char **argv)
     if(serial_host.isOpen())
     {
         serial_host.flush();
-        ROS_INFO("Connected to port %s", port);
+        ROS_INFO("Connected to port %s", port.c_str());
     }
 
     UartComm comm(nh, &serial_host, baud);
@@ -86,6 +86,8 @@ int main(int argc, char **argv)
 
     ros::Subscriber visualServo_sub = nh.subscribe("/VI_position_cmd",10,
         &UartComm::visualServoCallback, &comm);
+    ros::Subscriber gimbalCmd_pub = nh.subscribe("/Hunter_Killer_cmd",10,
+        &UartComm::gimbalCmdCallback, &comm);
 
     uint8_t rx_buffer[max_len],
             tx_buffer[max_len];
