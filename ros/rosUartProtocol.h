@@ -23,7 +23,6 @@
 
 #define GIMBAL_INFO_ANG_PSC      10000
 #define GIMBAL_CMD_ANGVEL_PSC     1000
-#define BULLET_SPEED_MIN           10U
 
 #define TARGET_POS_PSC           40000
 #define TARGET_VEL_PSC            4000
@@ -54,9 +53,9 @@ typedef struct
 
 typedef struct
 {
-    uint16_t timeStamp_16;         //Send -1 to respond to parameter packet
-    uint8_t  bullet_speed  : 6;
-    uint8_t  cv_mode       : 2;    //0-armor, 1-rune, 2-siege
+    uint8_t  bullet_speed_0;
+    uint8_t  bullet_speed_1;
+    uint8_t  cv_mode       ;    //0-armor, 1-rune, 2-siege
     int16_t  yaw;                  //real range: -pi ~ pi
     int16_t  pitch;
     int16_t  roll;
