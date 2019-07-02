@@ -181,12 +181,13 @@ uint8_t UartComm::packGimbalCmd(uint8_t txbuf[], const rm_vehicle_msgs::gimbalCm
 
     uart_gimbal_cmd_t cmd;
 
-    cmd.yaw_velCmd   = msg.yaw_cmd * GIMBAL_CMD_ANGVEL_PSC;
-    cmd.pitch_velCmd = msg.pitch_cmd * GIMBAL_CMD_ANGVEL_PSC;
+    cmd.qw = msg.qw * GIMBAL_QUATERNION_PSC;
+    cmd.qx = msg.qx * GIMBAL_QUATERNION_PSC;
+    cmd.qy = msg.qy * GIMBAL_QUATERNION_PSC;
+    cmd.qz = msg.qz * GIMBAL_QUATERNION_PSC;
     cmd.valid        = msg.valid;
     cmd.shootMode_0  = msg.shootMode_0;
     cmd.shootMode_1  = msg.shootMode_1;
-    cmd.scaleDown    = msg.scaleDown;
 
     uint8_t* txptr = txbuf;
     memcpy(txptr, &header, sizeof(uart_header_t));

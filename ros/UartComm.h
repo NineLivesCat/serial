@@ -190,8 +190,7 @@ public:
      *          to uart gimbal cmd packet data
      * @return: length of tx bufffer
      */
-    uint8_t packGimbalCmd(uint8_t txbuf[],
-        const rm_vehicle_msgs::gimbalCmd &msg);
+    uint8_t packGimbalCmd(uint8_t txbuf[], const rm_vehicle_msgs::gimbalCmd &msg);
     void    processGimbalInfo(uint8_t rxbuf[], const bool valid);
 
     void    gimbalCmdCallback(const rm_vehicle_msgs::gimbalCmd::ConstPtr& msg);
