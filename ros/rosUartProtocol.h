@@ -56,11 +56,7 @@ typedef struct
 {
     uint8_t  bullet_speed_0;
     uint8_t  bullet_speed_1;
-<<<<<<< HEAD
-    uint8_t  cv_mode       ;    //0-armor, 1-rune, 2-siege
-=======
     uint8_t  cv_mode;              //0-armor, 1-rune, 2-siege
->>>>>>> acf622dff1f0d7ae6233f0bc6969ff37c5f65406
     int16_t  yaw;                  //real range: -pi ~ pi
     int16_t  pitch;
     int16_t  roll;
