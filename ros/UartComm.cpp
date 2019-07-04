@@ -150,17 +150,16 @@ uint8_t UartComm::packTargetInfo(uint8_t txbuf[], const rm_cv_msgs::VisualServo 
 
     uart_target_t cmd;
 
-    //For gen1 visual servo, send target pos only
-    cmd.z_pos_0        = (float)(msg.z0 )*TARGET_POS_PSC;
-    cmd.y_pos_0        = (float)(msg.y0 )*TARGET_POS_PSC;
-    cmd.z_pos_1        = (float)(msg.z1 )*TARGET_POS_PSC;
-    cmd.y_pos_1        = (float)(msg.y1 )*TARGET_POS_PSC;
-    cmd.z_vel        = (float)(msg.dz)*TARGET_VEL_PSC;
-    cmd.y_vel        = (float)(msg.dy)*TARGET_VEL_PSC;
-    cmd.valid        = msg.valid;
-    cmd.shootMode_0  = msg.shootMode_0;
-    cmd.shootMode_1  = msg.shootMode_1;
-    cmd.scaleDown    = msg.scaleDown;
+    cmd.z_pos_0     = (float)(msg.z0 )*TARGET_POS_PSC;
+    cmd.y_pos_0     = (float)(msg.y0 )*TARGET_POS_PSC;
+    cmd.z_pos_1     = (float)(msg.z1 )*TARGET_POS_PSC;
+    cmd.y_pos_1     = (float)(msg.y1 )*TARGET_POS_PSC;
+    cmd.z_vel       = (float)(msg.dz )*TARGET_VEL_PSC;
+    cmd.y_vel       = (float)(msg.dy )*TARGET_VEL_PSC;
+    cmd.valid       = msg.valid;
+    cmd.shootMode_0 = msg.shootMode_0;
+    cmd.shootMode_1 = msg.shootMode_1;
+    cmd.scaleDown   = msg.scaleDown;
 
     uint8_t* txptr = txbuf;
     memcpy(txptr, &header, sizeof(uart_header_t));
@@ -181,13 +180,17 @@ uint8_t UartComm::packGimbalCmd(uint8_t txbuf[], const rm_vehicle_msgs::gimbalCm
 
     uart_gimbal_cmd_t cmd;
 
-    cmd.qw = msg.qw * GIMBAL_QUATERNION_PSC;
-    cmd.qx = msg.qx * GIMBAL_QUATERNION_PSC;
-    cmd.qy = msg.qy * GIMBAL_QUATERNION_PSC;
-    cmd.qz = msg.qz * GIMBAL_QUATERNION_PSC;
-    cmd.valid        = msg.valid;
-    cmd.shootMode_0  = msg.shootMode_0;
-    cmd.shootMode_1  = msg.shootMode_1;
+    double theta_2 = acos(msg.qw);
+    double theta = theta_2 * 2;
+    if(theta > M_PI) theta -= 2*M_PI;
+
+    cmd.q_theta     = theta * GIMBAL_ANG_PSC;
+    cmd.q_wx        = msg.qx/sinf(theta_2) * GIMBAL_QUATERNION_PSC;
+    cmd.q_wy        = msg.qy/sinf(theta_2) * GIMBAL_QUATERNION_PSC;
+    cmd.q_wz        = msg.qz/sinf(theta_2) * GIMBAL_QUATERNION_PSC;
+    cmd.valid       = msg.valid;
+    cmd.shootMode_0 = msg.shootMode_0;
+    cmd.shootMode_1 = msg.shootMode_1;
 
     uint8_t* txptr = txbuf;
     memcpy(txptr, &header, sizeof(uart_header_t));
@@ -230,18 +233,18 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
         gimbalMsg.header.stamp = ros::Time::now() - dt;
         RCMsg.    header.stamp = ros::Time::now() - dt;
 
-        gimbalMsg.yaw   = (float)(gimbal.yaw  )/GIMBAL_INFO_ANG_PSC;
-        gimbalMsg.pitch = (float)(gimbal.pitch)/GIMBAL_INFO_ANG_PSC;
-        gimbalMsg.roll  = (float)(gimbal.roll )/GIMBAL_INFO_ANG_PSC;
+        gimbalMsg.yaw   = (float)(gimbal.yaw  )/GIMBAL_ANG_PSC;
+        gimbalMsg.pitch = (float)(gimbal.pitch)/GIMBAL_ANG_PSC;
+        gimbalMsg.roll  = (float)(gimbal.roll )/GIMBAL_ANG_PSC;
 
-        gimbalMsg.imu_w.x = (float)(gimbal.imu_w[0])/GIMBAL_CMD_ANGVEL_PSC;
-        gimbalMsg.imu_w.y = (float)(gimbal.imu_w[1])/GIMBAL_CMD_ANGVEL_PSC;
-        gimbalMsg.imu_w.z = (float)(gimbal.imu_w[2])/GIMBAL_CMD_ANGVEL_PSC;
+        gimbalMsg.imu_w.x = (float)(gimbal.imu_w[0])/GIMBAL_ANGVEL_PSC;
+        gimbalMsg.imu_w.y = (float)(gimbal.imu_w[1])/GIMBAL_ANGVEL_PSC;
+        gimbalMsg.imu_w.z = (float)(gimbal.imu_w[2])/GIMBAL_ANGVEL_PSC;
 
-        gimbalMsg.bullet_speed_0 = gimbal.bullet_speed_0;
-        gimbalMsg.bullet_speed_1 = gimbal.bullet_speed_1;
+        gimbalMsg.bullet_speed_0 = gimbal.bullet_speed_0 + MIN_BULLET_SPEED;
+        gimbalMsg.bullet_speed_1 = gimbal.bullet_speed_1 + MIN_BULLET_SPEED;
         RCMsg  .control_enable   = gimbal.rc_enable_cv;
-        RCMsg  .cv_mode = gimbal.cv_mode;
+        RCMsg  .cv_mode = gimbal.rc_cv_mode;
         RCMsg  .rc_x  = gimbal.rc_x/128.0;
         RCMsg  .rc_y  = gimbal.rc_y/128.0;
 

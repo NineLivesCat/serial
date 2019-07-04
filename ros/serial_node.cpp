@@ -81,8 +81,8 @@ int main(int argc, char **argv)
     }
 
     UartComm comm(nh, &serial_host, baud);
-    comm.gimbalInfo_pub = nh.advertise<rm_vehicle_msgs::gimbalInfo>("/rm_vehicle/gimbal_info", 10);
-    comm.RC_pub = nh.advertise<rm_vehicle_msgs::RC>("/rm_vehicle/RC", 10);
+    comm.gimbalInfo_pub = nh.advertise<rm_vehicle_msgs::gimbalInfo>("/rm_vehicle/gimbal_info", 3);
+    comm.RC_pub = nh.advertise<rm_vehicle_msgs::RC>("/rm_vehicle/RC", 3);
 
     ros::Subscriber visualServo_sub = nh.subscribe("/VI_position_cmd",10,
         &UartComm::visualServoCallback, &comm);
@@ -100,11 +100,9 @@ int main(int argc, char **argv)
     //serialReadThd.detach();
 
     boost::thread heartbeatTxThd(boost::bind(&UartComm::heartbeatTxProcess, &comm));
-    heartbeatTxThd.detach();
-
     boost::thread masterCtrlThd(boost::bind(&MasterCtrlProcess, nh, &comm));
-    masterCtrlThd.detach();
 
+    int rx_cnt = 0;
     while (ros::ok())
     {
         if(comm.inSyncMode())//synchonization
@@ -148,6 +146,7 @@ int main(int argc, char **argv)
             if(comm.getStatus() >= UartComm::COMM_SEND_PARAM)
             {
                 rx_size = serial_host.read(rx_buffer, length);
+
                 if(rx_size == length)
                 {
                     if(comm.getStatus() > UartComm::COMM_SEND_PARAM)

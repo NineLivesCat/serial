@@ -5,9 +5,9 @@
  *   NOTE: This header file is shared among
  *   robomaster computer(s) & MCU(s)
  *   =======SHOULD CHECK THE VERSION NUMBER BEFORE USE======
- *   =======VERSION: 2019.07.03=============================
+ *   =======VERSION: 2019.07.04=============================
  */
-#define UART_PROTOCOL_VERSION     0x02
+#define UART_PROTOCOL_VERSION     0x03
 #define UART_START_BYTE           0xAA
 #define UART_CHECKSUM_OFFSET      0xA5
 
@@ -22,12 +22,14 @@
 #define UART_INVALID_ID           0xFF
 
 #define GIMBAL_QUATERNION_PSC    32767
-#define GIMBAL_INFO_ANG_PSC      10000
-#define GIMBAL_CMD_ANGVEL_PSC     1000
+#define GIMBAL_ANG_PSC           10000
+#define GIMBAL_ANGVEL_PSC         1000
 
 #define TARGET_POS_PSC           40000
 #define TARGET_VEL_PSC            4000
 #define RESPONSE_OK             0xA5A5
+
+#define MIN_BULLET_SPEED           10U
 
 typedef enum
 {
@@ -54,9 +56,8 @@ typedef struct
 
 typedef struct
 {
-    uint8_t  bullet_speed_0;
-    uint8_t  bullet_speed_1;
-    uint8_t  cv_mode;              //0-armor, 1-rune, 2-siege
+    uint8_t  bullet_speed_0  : 5;  //17mm speed
+    uint8_t  bullet_speed_1  : 3;  //42mm speed
     int16_t  yaw;                  //real range: -pi ~ pi
     int16_t  pitch;
     int16_t  roll;
@@ -64,13 +65,14 @@ typedef struct
     int8_t   rc_y;
     uint8_t  rc_enable_cv   : 1;
     uint8_t  rc_reset_cv    : 1;
-    uint8_t  rc_reserve     : 6;
+    uint8_t  rc_cv_mode     : 2; //0-armor, 1-rune, 2-siege
+    uint8_t  rc_reserve     : 4;
     int16_t  imu_w[3];
 } __attribute__((packed)) uart_gimbal_info_t;
 
 typedef struct
 {
-    uint8_t  reserve[16];
+    uint8_t  reserve[14];
     uint16_t content;      //Send -1 to respond to parameter packet
 } __attribute__((packed)) uart_param_response_t;
 
@@ -85,10 +87,10 @@ typedef struct
 
 typedef struct
 {
-    int16_t  qw;
-    int16_t  qx;
-    int16_t  qy;
-    int16_t  qz;
+    int16_t  q_theta;
+    int16_t  q_wx;
+    int16_t  q_wy;
+    int16_t  q_wz;
     uint8_t  shootMode_0 : 3;
     uint8_t  shootMode_1 : 3;
     uint8_t  valid       : 1;
