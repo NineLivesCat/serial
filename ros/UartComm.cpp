@@ -90,7 +90,7 @@ void UartComm::SendSyncSeq(uint8_t txbuf[], const bool sync_ok = false)
     last_write = ros::Time::now();
 }
 
-uint8_t UartComm::processSyncSeq(uint8_t rxbuf[])
+uint8_t UartComm::processSyncSeq(uint8_t rxbuf[], bool use_sync)
 {
     static const uint8_t len = sizeof(uart_header_t) +
             sizeof(uart_sync_t) +
@@ -127,8 +127,9 @@ uint8_t UartComm::processSyncSeq(uint8_t rxbuf[])
         ROS_FATAL("Invalid target sync data");
         return -1;
     }
-    else if(sync_error < SYNC_ERROR_TH_MS*1e2 &&
-            sync_error > -SYNC_ERROR_TH_MS*1e2)
+    else if(!use_sync ||
+            (sync_error < SYNC_ERROR_TH_MS*1e2 &&
+             sync_error > -SYNC_ERROR_TH_MS*1e2))
     {
         std::cout<<"Timestamp sync attempt(s):"<<sync_attempt<<
             "\tsync_error:"<<double(sync_error)/1e2<<"ms \n";
@@ -255,12 +256,12 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
         cmd.reset = gimbal.rc_reset_cv;
 
         static bool rune_mode = false;
-        if(!rune_mode && gimbal.cv_mode == 1)
+        if(!rune_mode && gimbal.rc_cv_mode == 1)
         {
             rune_mode = true;
             cmd.rune_mode = true;
         }
-        else if(rune_mode && gimbal.cv_mode == 0)
+        else if(rune_mode && gimbal.rc_cv_mode == 0)
         {
             rune_mode = false;
             cmd.armor_mode = true;
@@ -302,7 +303,7 @@ void UartComm::processParamResponse(uint8_t rxbuf[])
     }
     else
     {
-        ROS_WARN("Incorrect data frame received 1");
+        ROS_WARN("Incorrect data frame received 2");
 
         frame_err_cnt++;
         if(frame_err_cnt > 5)
@@ -395,6 +396,7 @@ void UartComm::heartbeatTxProcess(void)
         }
         else if(comm_status == COMM_SEND_PARAM)
         {
+            this->serial_port->flush();
             if(sendParameters(txbuf) == -1)
             {
                 ROS_FATAL("Required parameter not found!");

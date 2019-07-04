@@ -183,7 +183,7 @@ public:
      */
     uint8_t packSyncSeq(uint8_t txbuf[], const bool sync_ok);
 
-    uint8_t processSyncSeq(uint8_t rxbuf[]);
+    uint8_t processSyncSeq(uint8_t rxbuf[], bool use_sync = true);
 
     /*
      * @brief:  convert geometry_msgs::TwistStamped to

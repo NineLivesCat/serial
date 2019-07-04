@@ -111,32 +111,22 @@ int main(int argc, char **argv)
                 sizeof(uart_sync_t)+sizeof(uart_crc_t);
 
             comm.processGimbalInfo(rx_buffer, false);
-
-            if(use_sync)
+            comm.SendSyncSeq(tx_buffer, false);
+            rx_size = serial_host.read(rx_buffer, length);
+            if(rx_size == length)
             {
-                comm.SendSyncSeq(tx_buffer, false);
-                rx_size = serial_host.read(rx_buffer, length);
-                if(rx_size == length)
+                if(!comm.processSyncSeq(rx_buffer, use_sync))
                 {
-                    if(!comm.processSyncSeq(rx_buffer))
-                    {
-                        comm.SendSyncSeq(tx_buffer, true);
-                        comm.toggleRXMode();
-                    }
+                    comm.SendSyncSeq(tx_buffer, true);
+                    comm.toggleRXMode();
                 }
-                else
-                    comm.toggleSyncMode();
-
-                static uint32_t noData_cnt;
-                if(!rx_size && !(++noData_cnt % 50))
-                    ROS_WARN("No data received from embedded device");
             }
             else
-            {
-                comm.SendSyncSeq(tx_buffer, true);
-                ros::Duration(0.05).sleep();
-                comm.toggleRXMode();
-            }
+                comm.toggleSyncMode();
+
+            static uint32_t noData_cnt;
+            if(!rx_size && !(++noData_cnt % 50))
+                ROS_WARN("No data received from embedded device");
         }
         else
         {
