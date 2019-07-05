@@ -26,15 +26,31 @@ using std::endl;
 using std::vector;
 
 bool use_sync;
+static bool armor_ok = false;
+static bool rune_ok  = false;
 
 void MasterCtrlProcess(ros::NodeHandle& nh, UartComm* comm)
 {
     ros::ServiceClient armor_ctrl = nh.serviceClient<rm_vehicle_msgs::cvEnable>("/Armor_Node_Enable");
     ros::ServiceClient rune_ctrl  = nh.serviceClient<rm_vehicle_msgs::cvEnable>("/Rune_Node_Enable");
 
+    bool use_armor, use_rune;
+    nh.param<bool>  ("/serial_node/master/use_armor", use_armor, true);
+    nh.param<bool>  ("/serial_node/master/use_rune" , use_rune , true);
+    //wait for cv nodes to start
     while(ros::ok())
     {
-        if(comm->cmd.rune_mode) //Switch to rune mode
+        ros::param::get("/armor_detection_node/OK", armor_ok);
+        ros::param::get("/rune_detection_node/OK" , rune_ok);
+        if((!use_armor || armor_ok) && (!use_rune || rune_ok))
+            break;
+
+        ros::Duration(0.1).sleep();
+    }
+
+    while(ros::ok())
+    {
+        if(use_rune && comm->cmd.rune_mode) //Switch to rune mode
         {
             rm_vehicle_msgs::cvEnable armor_en, rune_en;
             armor_en.request.enable = false;
@@ -45,7 +61,7 @@ void MasterCtrlProcess(ros::NodeHandle& nh, UartComm* comm)
             comm->cmd.rune_mode  = false;
         }
 
-        if(comm->cmd.armor_mode) //Switch to armor mode
+        if(use_armor && comm->cmd.armor_mode) //Switch to armor mode
         {
             rm_vehicle_msgs::cvEnable armor_en, rune_en;
             armor_en.request.enable = true;

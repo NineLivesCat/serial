@@ -9,6 +9,9 @@
         <param name="use_hard_timestamp"        type="bool"   value="false"/>
         <param name="soft_timestamp_dt"         type="double" value="0"/>
 
+        <param name="master/use_armor"          type="bool"   value="true"/>
+        <param name="master/use_rune"           type="bool"   value="false"/>
+
         <param name="control/VS_kp_Pitch"       type="double" value="18"/>
         <param name="control/VS_kd_Pitch"       type="double" value="0.6"/>
         <param name="control/VS_kp_Yaw"         type="double" value="18"/>

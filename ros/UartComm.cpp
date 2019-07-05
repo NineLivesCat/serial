@@ -255,16 +255,20 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
         //Process user input command
         cmd.reset = gimbal.rc_reset_cv;
 
-        static bool rune_mode = false;
-        if(!rune_mode && gimbal.rc_cv_mode == 1)
+        static cv_mode_t cv_mode = CV_MODE_DUMMY;
+        if(cv_mode != gimbal.rc_cv_mode)
         {
-            rune_mode = true;
-            cmd.rune_mode = true;
-        }
-        else if(rune_mode && gimbal.rc_cv_mode == 0)
-        {
-            rune_mode = false;
-            cmd.armor_mode = true;
+            switch(gimbal.rc_cv_mode)
+            {
+                case CV_MODE_ARMOR:
+                    cmd.armor_mode = true;
+                    break;
+                case CV_MODE_RUNE:
+                    cmd.rune_mode = true;
+                    break;
+                default:
+                    break;
+            }
         }
     }
     else

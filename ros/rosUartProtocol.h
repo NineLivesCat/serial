@@ -33,9 +33,10 @@
 
 typedef enum
 {
-    CTRL_MODE_IDLE  = 0,
-    CTRL_MODE_AIM_0 = 1,
-} gimbal_ctrl_mode_t;
+    CV_MODE_ARMOR   = 0,
+    CV_MODE_RUNE    = 1,
+    CV_MODE_DUMMY   = 255
+} cv_mode_t;
 
 typedef struct
 {
