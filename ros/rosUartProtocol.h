@@ -5,7 +5,7 @@
  *   NOTE: This header file is shared among
  *   robomaster computer(s) & MCU(s)
  *   =======SHOULD CHECK THE VERSION NUMBER BEFORE USE======
- *   =======VERSION: 2019.07.04=============================
+ *   =======VERSION: 2019.07.05=============================
  */
 #define UART_PROTOCOL_VERSION     0x03
 #define UART_START_BYTE           0xAA

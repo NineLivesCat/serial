@@ -269,6 +269,7 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
                 default:
                     break;
             }
+            cv_mode = (cv_mode_t)(gimbal.rc_cv_mode);
         }
     }
     else
