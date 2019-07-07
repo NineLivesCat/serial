@@ -151,12 +151,12 @@ uint8_t UartComm::packTargetInfo(uint8_t txbuf[], const rm_cv_msgs::VisualServo 
 
     uart_target_t cmd;
 
-    cmd.z_pos_0     = (float)(msg.z0 )*TARGET_POS_PSC;
-    cmd.y_pos_0     = (float)(msg.y0 )*TARGET_POS_PSC;
-    cmd.z_pos_1     = (float)(msg.z1 )*TARGET_POS_PSC;
-    cmd.y_pos_1     = (float)(msg.y1 )*TARGET_POS_PSC;
-    cmd.z_vel       = (float)(msg.dz )*TARGET_VEL_PSC;
-    cmd.y_vel       = (float)(msg.dy )*TARGET_VEL_PSC;
+    cmd.z_pos_0     = msg.z0;
+    cmd.y_pos_0     = msg.y0;
+    cmd.z_pos_1     = msg.z1;
+    cmd.y_pos_1     = msg.y1;
+    cmd.z_vel       = msg.dz;
+    cmd.y_vel       = msg.dy;
     cmd.valid       = msg.valid;
     cmd.shootMode_0 = msg.shootMode_0;
     cmd.shootMode_1 = msg.shootMode_1;
@@ -185,10 +185,10 @@ uint8_t UartComm::packGimbalCmd(uint8_t txbuf[], const rm_vehicle_msgs::gimbalCm
     double theta = theta_2 * 2;
     if(theta > M_PI) theta -= 2*M_PI;
 
-    cmd.q_theta     = theta * GIMBAL_ANG_PSC;
-    cmd.q_wx        = msg.qx/sinf(theta_2) * GIMBAL_QUATERNION_PSC;
-    cmd.q_wy        = msg.qy/sinf(theta_2) * GIMBAL_QUATERNION_PSC;
-    cmd.q_wz        = msg.qz/sinf(theta_2) * GIMBAL_QUATERNION_PSC;
+    cmd.qw          = msg.qw;
+    cmd.qx          = msg.qx;
+    cmd.qy          = msg.qy;
+    cmd.qz          = msg.qz;
     cmd.valid       = msg.valid;
     cmd.shootMode_0 = msg.shootMode_0;
     cmd.shootMode_1 = msg.shootMode_1;
@@ -234,13 +234,13 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
         gimbalMsg.header.stamp = ros::Time::now() - dt;
         RCMsg.    header.stamp = ros::Time::now() - dt;
 
-        gimbalMsg.yaw   = (float)(gimbal.yaw  )/GIMBAL_ANG_PSC;
-        gimbalMsg.pitch = (float)(gimbal.pitch)/GIMBAL_ANG_PSC;
-        gimbalMsg.roll  = (float)(gimbal.roll )/GIMBAL_ANG_PSC;
+        gimbalMsg.yaw   = gimbal.yaw  ;
+        gimbalMsg.pitch = gimbal.pitch;
+        gimbalMsg.roll  = gimbal.roll ;
 
-        gimbalMsg.imu_w.x = (float)(gimbal.imu_w[0])/GIMBAL_ANGVEL_PSC;
-        gimbalMsg.imu_w.y = (float)(gimbal.imu_w[1])/GIMBAL_ANGVEL_PSC;
-        gimbalMsg.imu_w.z = (float)(gimbal.imu_w[2])/GIMBAL_ANGVEL_PSC;
+        gimbalMsg.imu_w.x = gimbal.imu_w[0];
+        gimbalMsg.imu_w.y = gimbal.imu_w[1];
+        gimbalMsg.imu_w.z = gimbal.imu_w[2];
 
         gimbalMsg.bullet_speed_0 = gimbal.bullet_speed_0 + MIN_BULLET_SPEED;
         gimbalMsg.bullet_speed_1 = gimbal.bullet_speed_1 + MIN_BULLET_SPEED;

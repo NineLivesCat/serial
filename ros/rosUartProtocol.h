@@ -5,9 +5,9 @@
  *   NOTE: This header file is shared among
  *   robomaster computer(s) & MCU(s)
  *   =======SHOULD CHECK THE VERSION NUMBER BEFORE USE======
- *   =======VERSION: 2019.07.05=============================
+ *   =======VERSION: 2019.07.07=============================
  */
-#define UART_PROTOCOL_VERSION     0x03
+#define UART_PROTOCOL_VERSION     0x04
 #define UART_START_BYTE           0xAA
 #define UART_CHECKSUM_OFFSET      0xA5
 
@@ -21,12 +21,6 @@
 #define UART_ROS_RESPONSE_ID      0x0B
 #define UART_INVALID_ID           0xFF
 
-#define GIMBAL_QUATERNION_PSC    32767
-#define GIMBAL_ANG_PSC           10000
-#define GIMBAL_ANGVEL_PSC         1000
-
-#define TARGET_POS_PSC           40000
-#define TARGET_VEL_PSC            4000
 #define RESPONSE_OK             0xA5A5
 
 #define MIN_BULLET_SPEED           10U
@@ -59,22 +53,22 @@ typedef struct
 {
     uint8_t  bullet_speed_0  : 5;  //17mm speed
     uint8_t  bullet_speed_1  : 3;  //42mm speed
-    int16_t  yaw;                  //real range: -pi ~ pi
-    int16_t  pitch;
-    int16_t  roll;
+    float    yaw;
+    float    pitch;
+    float    roll;
     int8_t   rc_x;
     int8_t   rc_y;
     uint8_t  rc_enable_cv   : 1;
     uint8_t  rc_reset_cv    : 1;
     uint8_t  rc_cv_mode     : 2; //0-armor, 1-rune, 2-siege
     uint8_t  rc_reserve     : 4;
-    int16_t  imu_w[3];
-    uint8_t  reserve[14];
+    float    imu_w[3];
+    uint8_t  reserve[1];
 } __attribute__((packed)) uart_gimbal_info_t;
 
 typedef struct
 {
-    uint8_t  reserve[28];
+    uint8_t  reserve[27];
     uint16_t content;      //Send -1 to respond to parameter packet
 } __attribute__((packed)) uart_param_response_t;
 
@@ -89,28 +83,37 @@ typedef struct
 
 typedef struct
 {
-    int16_t  q_theta;
-    int16_t  q_wx;
-    int16_t  q_wy;
-    int16_t  q_wz;
+    float    qw;
+    float    qx;
+    float    qy;
+    float    qz;
     uint8_t  shootMode_0 : 3;
     uint8_t  shootMode_1 : 3;
     uint8_t  valid       : 1;
-    uint8_t  reserve     : 1;
+    uint8_t  tracking    : 1;
+
+    uint8_t  reserve[12];
 } __attribute__((packed)) uart_gimbal_cmd_t;
 
 typedef struct
 {
-    int16_t  z_pos_0;
-    int16_t  y_pos_0;
-    int16_t  z_pos_1;
-    int16_t  y_pos_1;
-    int16_t  z_vel;
-    int16_t  y_vel;
+    float    z_pos_0;
+    float    y_pos_0;
+    float    z_pos_1;
+    float    y_pos_1;
+    float    z_vel;
+    float    y_vel;
+
     uint8_t  shootMode_0 : 3;
     uint8_t  shootMode_1 : 3;
     uint8_t  valid       : 1;
+    uint8_t  tracking    : 1;
+
     uint8_t  scaleDown   : 1;
+    uint8_t  distance    : 4;
+    uint8_t  target_num  : 3;
+
+    uint8_t  reserve[3];
 } __attribute__((packed)) uart_target_t;
 
 #endif
