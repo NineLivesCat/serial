@@ -63,7 +63,9 @@ typedef struct
     uint8_t  rc_cv_mode     : 2; //0-armor, 1-rune, 2-siege
     uint8_t  rc_reserve     : 4;
     float    imu_w[3];
-    uint8_t  reserve[1];
+    uint8_t  color          : 2; //undefined:0, red:1, blue:2
+    uint8_t  remain_time    : 4; //remain time in minutes
+    uint8_t  reserve        : 2;
 } __attribute__((packed)) uart_gimbal_info_t;
 
 typedef struct
