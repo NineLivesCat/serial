@@ -12,7 +12,7 @@ void UartComm::gimbalCmdCallback(const rm_vehicle_msgs::gimbalCmd::ConstPtr& msg
         if((ros::Time::now() - last_write).toSec() < tx_wait_time)
             return;
 
-        uint8_t txbuf[30];
+        uint8_t txbuf[32];
         packGimbalCmd(txbuf, *msg);
         this->serial_port->write(txbuf, len);
         last_write = ros::Time::now();
@@ -35,7 +35,7 @@ void UartComm::visualServoCallback(const rm_cv_msgs::VisualServo::ConstPtr& msg)
         if((ros::Time::now() - last_write).toSec() < tx_wait_time)
             return;
 
-        uint8_t txbuf[30];
+        uint8_t txbuf[32];
         packTargetInfo(txbuf, *msg);
         this->serial_port->write(txbuf, len);
         last_write = ros::Time::now();
@@ -183,10 +183,6 @@ uint8_t UartComm::packGimbalCmd(uint8_t txbuf[], const rm_vehicle_msgs::gimbalCm
     header.type = UART_GIMBAL_CMD_ID;
 
     uart_gimbal_cmd_t cmd;
-
-    double theta_2 = acos(msg.qw);
-    double theta = theta_2 * 2;
-    if(theta > M_PI) theta -= 2*M_PI;
 
     cmd.qw          = msg.qw;
     cmd.qx          = msg.qx;
