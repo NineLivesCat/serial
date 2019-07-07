@@ -158,10 +158,13 @@ uint8_t UartComm::packTargetInfo(uint8_t txbuf[], const rm_cv_msgs::VisualServo 
     cmd.z_vel       = msg.dz;
     cmd.y_vel       = msg.dy;
     cmd.valid       = msg.valid;
+    cmd.tracking    = msg.tracking;
     cmd.shootMode_0 = msg.shootMode_0;
     cmd.shootMode_1 = msg.shootMode_1;
-    cmd.scaleDown   = msg.scaleDown;
 
+    cmd.scaleDown   = msg.scaleDown;
+    cmd.target_num  = msg.target_num;
+    cmd.distance_cm = msg.target_distance * 100;
     uint8_t* txptr = txbuf;
     memcpy(txptr, &header, sizeof(uart_header_t));
     txptr += sizeof(uart_header_t);
@@ -190,8 +193,13 @@ uint8_t UartComm::packGimbalCmd(uint8_t txbuf[], const rm_vehicle_msgs::gimbalCm
     cmd.qy          = msg.qy;
     cmd.qz          = msg.qz;
     cmd.valid       = msg.valid;
+    cmd.tracking    = false;
     cmd.shootMode_0 = msg.shootMode_0;
     cmd.shootMode_1 = msg.shootMode_1;
+
+    cmd.scaleDown   = false;
+    cmd.target_num  = msg.target_num;
+    cmd.distance_cm = msg.target_distance * 100;
 
     uint8_t* txptr = txbuf;
     memcpy(txptr, &header, sizeof(uart_header_t));

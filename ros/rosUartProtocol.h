@@ -94,7 +94,11 @@ typedef struct
     uint8_t  valid       : 1;
     uint8_t  tracking    : 1;
 
-    uint8_t  reserve[12];
+    uint8_t  scaleDown   : 1;
+    uint8_t  target_num  : 7;
+
+    uint16_t distance_cm;
+    uint8_t  reserve[9];
 } __attribute__((packed)) uart_gimbal_cmd_t;
 
 typedef struct
@@ -112,10 +116,10 @@ typedef struct
     uint8_t  tracking    : 1;
 
     uint8_t  scaleDown   : 1;
-    uint8_t  distance    : 4;
-    uint8_t  target_num  : 3;
+    uint8_t  target_num  : 7;
 
-    uint8_t  reserve[3];
+    uint16_t distance_cm;
+    uint8_t  reserve;
 } __attribute__((packed)) uart_target_t;
 
 #endif
