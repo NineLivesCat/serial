@@ -16,6 +16,9 @@ struct User_Command
     bool reset;
     bool rune_mode;
     bool armor_mode;
+
+    uint8_t robot_color; //0-undefined, 1-red, 2-blue
+    uint8_t rune_type;    //0-small, 1-big
 };
 
 class CommBase
@@ -98,8 +101,8 @@ protected:
         txbuf[i] = result;
     }
 
-    ros::Time     sync_time;
-    ros::Time     heartbeat_time;
+    ros::Time sync_time;
+    ros::Time heartbeat_time;
 
     bool            use_hard_timestamp;
     ros::Duration   dt;
@@ -109,8 +112,8 @@ protected:
     const double  HEARTBEAT_TIMEOUT_S = 1;
     const double  SYNC_ERROR_TH_MS    = 1.0;
 
-    uint8_t frame_err_cnt;
-    comm_status_t  comm_status;
+    uint8_t         frame_err_cnt;
+    comm_status_t     comm_status;
 };
 
 class UartComm : public CommBase
