@@ -51,10 +51,20 @@ void MasterCtrlProcess(ros::NodeHandle& nh, UartComm* comm)
     rm_vehicle_msgs::cvEnable armor_en, rune_en;
     while(ros::ok())
     {
+        rune_en.request.rune_mode = comm->cmd.rune_type;
+
         if(use_rune && comm->cmd.rune_mode) //Switch to rune mode
         {
             armor_en.request.enable = false;
             rune_en.request.enable  = true;
+
+            if(comm->cmd.robot_color == ROBOT_TEAM_UNDEFINED)
+                rune_en.request.use_judge_color = false;
+            else
+            {
+                rune_en.request.use_judge_color = true;
+                rune_en.request.target_blue = comm->cmd.robot_color == ROBOT_TEAM_BLUE;
+            }
 
             armor_ctrl.call(armor_en);
             rune_ctrl.call(rune_en);
@@ -65,6 +75,14 @@ void MasterCtrlProcess(ros::NodeHandle& nh, UartComm* comm)
         {
             armor_en.request.enable = true;
             rune_en.request.enable  = false;
+
+            if(comm->cmd.robot_color == ROBOT_TEAM_UNDEFINED)
+                armor_en.request.use_judge_color = false;
+            else
+            {
+                armor_en.request.use_judge_color = true;
+                armor_en.request.target_blue = comm->cmd.robot_color == ROBOT_TEAM_RED;
+            }
 
             rune_ctrl.call(rune_en);
             armor_ctrl.call(armor_en);
