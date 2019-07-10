@@ -49,6 +49,12 @@ void MasterCtrlProcess(ros::NodeHandle& nh, UartComm* comm)
     }
 
     rm_vehicle_msgs::cvEnable armor_en, rune_en;
+
+    ros::Duration(1).sleep();
+    armor_en.request.enable = false;
+    armor_ctrl.call(armor_en);
+    ros::Duration(1).sleep();
+
     while(ros::ok())
     {
         rune_en.request.rune_mode = comm->cmd.rune_type;
