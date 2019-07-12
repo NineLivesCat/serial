@@ -246,8 +246,13 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
         gimbalMsg.imu_w.y = gimbal.imu_w[1];
         gimbalMsg.imu_w.z = gimbal.imu_w[2];
 
-        gimbalMsg.bullet_speed_0 = gimbal.bullet_speed_0 + MIN_BULLET_SPEED;
-        gimbalMsg.bullet_speed_1 = gimbal.bullet_speed_1 + MIN_BULLET_SPEED;
+        gimbalMsg.bullet_speed_17 = gimbal.bullet_speed_0 + MIN_BULLET_SPEED;
+
+        if(cmd.robot_hero)
+            gimbalMsg.bullet_speed_42 = gimbal.bullet_speed_1 + MIN_BULLET_SPEED;
+        else
+            gimbalMsg.bullet_speed_42 = 16;
+
         RCMsg  .control_enable   = gimbal.rc_enable_cv;
         RCMsg  .cv_mode = gimbal.rc_cv_mode;
         RCMsg  .rc_x  = gimbal.rc_x/128.0;

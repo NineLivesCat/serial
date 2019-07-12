@@ -5,7 +5,7 @@
  *   NOTE: This header file is shared among
  *   robomaster computer(s) & MCU(s)
  *   =======SHOULD CHECK THE VERSION NUMBER BEFORE USE======
- *   =======VERSION: 2019.07.09=============================
+ *   =======VERSION: 2019.07.12=============================
  */
 #define UART_PROTOCOL_VERSION     0x05
 #define UART_START_BYTE           0xAA
@@ -31,6 +31,13 @@ typedef enum
     CV_MODE_RUNE    = 1,
     CV_MODE_DUMMY   = 255
 } cv_mode_t;
+
+typedef enum{
+    SHOOTING_MODE_IDLE       = 0,
+    SHOOTING_MODE_FIRE       = 1,
+    SHOOTING_MODE_CRAZY_FIRE = 2, //Very Very DEADLY!!!!!!
+    SHOOTING_MODE_FORBID     = 3
+};
 
 typedef enum
 {

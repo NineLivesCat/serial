@@ -17,6 +17,7 @@ struct User_Command
     bool rune_mode;
     bool armor_mode;
 
+    bool robot_hero;
     uint8_t robot_color; //0-undefined, 1-red, 2-blue
     uint8_t rune_type;    //0-small, 1-big
 };

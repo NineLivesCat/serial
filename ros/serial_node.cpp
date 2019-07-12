@@ -55,6 +55,10 @@ void MasterCtrlProcess(ros::NodeHandle& nh, UartComm* comm)
     armor_ctrl.call(armor_en);
     ros::Duration(1).sleep();
 
+    int robot_type;
+    nh.param<int>("/armor_detection_node/robot_type", robot_type, 0);
+    comm->cmd.robot_hero = robot_type == 1;
+
     while(ros::ok())
     {
         rune_en.request.rune_mode = comm->cmd.rune_type;
