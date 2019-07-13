@@ -255,16 +255,17 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
 
         RCMsg  .control_enable   = gimbal.rc_enable_cv;
         RCMsg  .cv_mode = gimbal.rc_cv_mode;
-        RCMsg  .rc_x  = gimbal.rc_x/128.0;
-        RCMsg  .rc_y  = gimbal.rc_y/128.0;
-
-        gimbalMsg.valid = valid; //bullet_speed = 0 means gimbal not initialized
-        RCMsg    .valid = valid;
-
         //Process user input command
         cmd.reset       = gimbal.rc_reset_cv;
         cmd.robot_color = gimbal.color;
         cmd.rune_type   = gimbal.rune_mode;
+
+        gimbalMsg.gimbal_pitch_angle = (float)(gimbal.gimbal_pitch_angle)/GIMBAL_PITCH_PSC;
+        RCMsg.rc_x  = gimbal.rc_x/128.0;
+        RCMsg.rc_y  = gimbal.rc_y/128.0;
+
+        gimbalMsg.valid = valid; //bullet_speed = 0 means gimbal not initialized
+        RCMsg    .valid = valid;
 
         static cv_mode_t cv_mode = CV_MODE_DUMMY;
         if(cv_mode != gimbal.rc_cv_mode)

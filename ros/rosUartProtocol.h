@@ -24,6 +24,7 @@
 #define RESPONSE_OK             0xA5A5
 
 #define MIN_BULLET_SPEED           10U
+#define GIMBAL_PITCH_PSC        80.84f
 
 typedef enum
 {
@@ -76,16 +77,19 @@ typedef struct
     float    yaw;
     float    pitch;
     float    roll;
+
+    int8_t   gimbal_pitch_angle;
     int8_t   rc_x;
     int8_t   rc_y;
+
     uint8_t  rc_enable_cv   : 1;
     uint8_t  rc_reset_cv    : 1;
     uint8_t  rc_cv_mode     : 2; //0-armor, 1-rune, 2-siege
-    uint8_t  rc_reserve     : 4;
-    float    imu_w[3];
     uint8_t  color          : 2; //undefined:0, red:1, blue:2
     uint8_t  rune_mode      : 1; //remain time in minutes
-    uint8_t  reserve        : 5;
+    uint8_t  rc_reserve     : 1;
+
+    float    imu_w[3];
 } __attribute__((packed)) uart_gimbal_info_t;
 
 typedef struct
