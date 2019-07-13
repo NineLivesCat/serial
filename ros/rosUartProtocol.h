@@ -7,7 +7,7 @@
  *   =======SHOULD CHECK THE VERSION NUMBER BEFORE USE======
  *   =======VERSION: 2019.07.12=============================
  */
-#define UART_PROTOCOL_VERSION     0x05
+#define UART_PROTOCOL_VERSION     0x06
 #define UART_START_BYTE           0xAA
 #define UART_CHECKSUM_OFFSET      0xA5
 
