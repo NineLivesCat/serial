@@ -5,7 +5,7 @@
  *   NOTE: This header file is shared among
  *   robomaster computer(s) & MCU(s)
  *   =======SHOULD CHECK THE VERSION NUMBER BEFORE USE======
- *   =======VERSION: 2019.07.12=============================
+ *   =======VERSION: 2019.07.14=============================
  */
 #define UART_PROTOCOL_VERSION     0x06
 #define UART_START_BYTE           0xAA
@@ -51,6 +51,17 @@ typedef enum
 {
     RUNE_SMALL = 0,
     RUNE_BIG   = 1,
+};
+
+typedef enum
+{
+    TARGET_RUNE_CENTER = 9,
+    TARGET_RUNE_0      = 10,
+    TARGET_RUNE_1      = 11,
+    TARGET_RUNE_2      = 12,
+    TARGET_RUNE_3      = 13,
+    TARGET_RUNE_4      = 14,
+    TARGET_BASE        = 20
 };
 
 typedef struct
