@@ -62,41 +62,39 @@ void MasterCtrlProcess(ros::NodeHandle& nh, UartComm* comm)
     while(ros::ok())
     {
         rune_en.request.rune_mode = comm->cmd.rune_type;
-
-        if(use_rune && comm->cmd.rune_mode) //Switch to rune mode
+        if(comm->cmd.robot_color == ROBOT_TEAM_UNDEFINED)
         {
-            armor_en.request.enable = false;
-            rune_en.request.enable  = true;
-
-            if(comm->cmd.robot_color == ROBOT_TEAM_UNDEFINED)
-                rune_en.request.use_judge_color = false;
-            else
-            {
-                rune_en.request.use_judge_color = true;
-                rune_en.request.target_blue = comm->cmd.robot_color == ROBOT_TEAM_BLUE;
-            }
-
-            armor_ctrl.call(armor_en);
-            rune_ctrl.call(rune_en);
-            comm->cmd.rune_mode  = false;
+            armor_en.request.use_judge_color = false;
+            rune_en. request.use_judge_color = false;
+        }
+        else
+        {
+            armor_en.request.use_judge_color = true;
+            armor_en.request.target_blue = comm->cmd.robot_color == ROBOT_TEAM_RED;
+            rune_en. request.use_judge_color = true;
+            rune_en. request.target_blue = comm->cmd.robot_color == ROBOT_TEAM_BLUE;
         }
 
-        if(use_armor && comm->cmd.armor_mode) //Switch to armor mode
+        if(comm->cmd.switch_flag)
         {
-            armor_en.request.enable = true;
-            rune_en.request.enable  = false;
-
-            if(comm->cmd.robot_color == ROBOT_TEAM_UNDEFINED)
-                armor_en.request.use_judge_color = false;
-            else
+            if(use_armor && comm->cmd.cv_mode == CV_MODE_ARMOR)
             {
-                armor_en.request.use_judge_color = true;
-                armor_en.request.target_blue = comm->cmd.robot_color == ROBOT_TEAM_RED;
+                armor_en.request.enable = true;
+                rune_en.request.enable  = false;
+
+                armor_ctrl.call(armor_en);
+                rune_ctrl.call(rune_en);
+            }
+            else if(use_rune && comm->cmd.cv_mode == CV_MODE_RUNE)
+            {
+                armor_en.request.enable = false;
+                rune_en.request.enable  = true;
+
+                armor_ctrl.call(armor_en);
+                rune_ctrl.call(rune_en);
             }
 
-            rune_ctrl.call(rune_en);
-            armor_ctrl.call(armor_en);
-            comm->cmd.armor_mode = false;
+            comm->cmd.switch_flag = false;
         }
     }
 }

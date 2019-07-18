@@ -261,27 +261,28 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
         cmd.rune_type   = gimbal.rune_mode;
 
         gimbalMsg.gimbal_pitch_angle = (float)(gimbal.gimbal_pitch_angle)/GIMBAL_PITCH_PSC;
-        RCMsg.rc_x  = gimbal.rc_x/128.0;
-        RCMsg.rc_y  = gimbal.rc_y/128.0;
+        RCMsg.rc_x      = gimbal.rc_x/128.0;
+        RCMsg.rc_y      = gimbal.rc_y/128.0;
 
         gimbalMsg.valid = valid; //bullet_speed = 0 means gimbal not initialized
         RCMsg    .valid = valid;
 
-        static cv_mode_t cv_mode = CV_MODE_DUMMY;
-        if(cv_mode != gimbal.rc_cv_mode)
+        if(cmd.cv_mode != gimbal.rc_cv_mode)
         {
-            switch(gimbal.rc_cv_mode)
-            {
-                case CV_MODE_ARMOR:
-                    cmd.armor_mode = true;
-                    break;
-                case CV_MODE_RUNE:
-                    cmd.rune_mode = true;
-                    break;
-                default:
-                    break;
-            }
-            cv_mode = (cv_mode_t)(gimbal.rc_cv_mode);
+            cmd.cv_mode     = gimbal.rc_cv_mode;
+            cmd.switch_flag = true;
+        }
+
+        if(cmd.robot_color != gimbal.color)
+        {
+            cmd.robot_color = gimbal.color;
+            cmd.switch_flag = true;
+        }
+
+        if(cmd.rune_type != gimbal.rune_mode)
+        {
+            cmd.rune_type   = gimbal.rune_mode;
+            cmd.switch_flag = true;
         }
     }
     else

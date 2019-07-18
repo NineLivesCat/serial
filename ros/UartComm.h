@@ -13,13 +13,13 @@
 
 struct User_Command
 {
-    bool reset;
-    bool rune_mode;
-    bool armor_mode;
+    bool          reset;
+    uint8_t     cv_mode;
+    bool    switch_flag;
 
-    bool robot_hero;
+    bool     robot_hero;
     uint8_t robot_color; //0-undefined, 1-red, 2-blue
-    uint8_t rune_type;    //0-small, 1-big
+    uint8_t   rune_type;    //0-small, 1-big
 };
 
 class CommBase
@@ -36,13 +36,13 @@ public:
 
     enum comm_status_t
     {
-        COMM_UNINIT      = 0,
-        COMM_OFF         = 1,
-        COMM_SYNC_0      = 2,
-        COMM_SYNC_1      = 3,
-        COMM_SEND_PARAM  = 4,
-        COMM_IDLE        = 5,
-        COMM_ON          = 6,
+        COMM_UNINIT      =  0,
+        COMM_OFF         =  1,
+        COMM_SYNC_0      =  2,
+        COMM_SYNC_1      =  3,
+        COMM_SEND_PARAM  =  4,
+        COMM_IDLE        =  5,
+        COMM_ON          =  6,
         COMM_ERROR       = -1
     };
 
