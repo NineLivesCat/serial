@@ -70,8 +70,8 @@ void MasterCtrlProcess(ros::NodeHandle& nh, UartComm* comm)
         else
         {
             armor_en.request.use_judge_color = true;
-            armor_en.request.target_blue = comm->cmd.robot_color == ROBOT_TEAM_RED;
             rune_en. request.use_judge_color = true;
+            armor_en.request.target_blue = comm->cmd.robot_color == ROBOT_TEAM_RED;
             rune_en. request.target_blue = comm->cmd.robot_color == ROBOT_TEAM_BLUE;
         }
 
@@ -85,7 +85,7 @@ void MasterCtrlProcess(ros::NodeHandle& nh, UartComm* comm)
                 armor_ctrl.call(armor_en);
                 rune_ctrl.call(rune_en);
             }
-            else if(use_rune && comm->cmd.cv_mode == CV_MODE_RUNE)
+            if(use_rune && comm->cmd.cv_mode == CV_MODE_RUNE)
             {
                 armor_en.request.enable = false;
                 rune_en.request.enable  = true;

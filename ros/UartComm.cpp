@@ -180,7 +180,7 @@ uint8_t UartComm::packGimbalCmd(uint8_t txbuf[], const rm_vehicle_msgs::gimbalCm
 
     uart_header_t header;
     header.start = UART_START_BYTE;
-    header.type = UART_GIMBAL_CMD_ID;
+    header.type  = UART_GIMBAL_CMD_ID;
 
     uart_gimbal_cmd_t cmd;
 

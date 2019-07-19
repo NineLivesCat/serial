@@ -27,11 +27,13 @@ class CommBase
 public:
     CommBase(ros::NodeHandle& nh)
     {
-        sync_time = ros::Time::now();
+        sync_time   = ros::Time::now();
         comm_status = COMM_UNINIT;
-        sync_error = 0;
+        sync_error  = 0;
 
-        frame_err_cnt = 0;
+        cmd.cv_mode     = CV_MODE_DUMMY;
+        cmd.robot_color = ROBOT_TEAM_UNDEFINED;
+        frame_err_cnt   = 0;
     }
 
     enum comm_status_t
