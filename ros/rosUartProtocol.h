@@ -5,7 +5,7 @@
  *   NOTE: This header file is shared among
  *   robomaster computer(s) & MCU(s)
  *   =======SHOULD CHECK THE VERSION NUMBER BEFORE USE======
- *   =======VERSION: 2019.07.14=============================
+ *   =======VERSION: 2019.07.20=============================
  */
 #define UART_PROTOCOL_VERSION     0x06
 #define UART_START_BYTE           0xAA
@@ -49,8 +49,9 @@ typedef enum
 
 typedef enum
 {
-    RUNE_SMALL = 0,
-    RUNE_BIG   = 1,
+    RUNE_UNDEFINED = 0,
+    RUNE_SMALL     = 1,
+    RUNE_BIG       = 2
 };
 
 typedef enum
@@ -97,8 +98,7 @@ typedef struct
     uint8_t  rc_reset_cv    : 1;
     uint8_t  rc_cv_mode     : 2; //0-armor, 1-rune, 2-siege
     uint8_t  color          : 2; //undefined:0, red:1, blue:2
-    uint8_t  rune_mode      : 1; //remain time in minutes
-    uint8_t  rc_reserve     : 1;
+    uint8_t  rune_mode      : 2; //remain time in minutes
 
     float    imu_w[3];
 } __attribute__((packed)) uart_gimbal_info_t;
