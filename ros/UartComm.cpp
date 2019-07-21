@@ -271,18 +271,21 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
         {
             cmd.cv_mode     = gimbal.rc_cv_mode;
             cmd.switch_flag = true;
+            last_write += ros::Duration(0.2);
         }
 
         if(cmd.robot_color != gimbal.color)
         {
             cmd.robot_color = gimbal.color;
             cmd.switch_flag = true;
+            last_write += ros::Duration(0.2);
         }
 
         if(cmd.rune_type != gimbal.rune_mode)
         {
             cmd.rune_type   = gimbal.rune_mode;
             cmd.switch_flag = true;
+            last_write += ros::Duration(0.2);
         }
     }
     else

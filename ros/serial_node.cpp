@@ -82,8 +82,8 @@ void MasterCtrlProcess(ros::NodeHandle& nh, UartComm* comm)
                 armor_en.request.enable = true;
                 rune_en.request.enable  = false;
 
-                armor_ctrl.call(armor_en);
                 rune_ctrl.call(rune_en);
+                armor_ctrl.call(armor_en);
             }
             if(use_rune && comm->cmd.cv_mode == CV_MODE_RUNE)
             {
