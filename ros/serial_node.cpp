@@ -59,6 +59,29 @@ void MasterCtrlProcess(ros::NodeHandle& nh, UartComm* comm)
     nh.param<int>("/armor_detection_node/robot_type", robot_type, 0);
     comm->cmd.robot_hero = robot_type == 1;
 
+    //enable no-gimbal debug mode
+    bool Narmor_debug, Nrune_debug;
+    nh.param<bool>("/armor_detection_node/debug_off", Narmor_debug, true);
+    nh.param<bool>("/rune_detection_node/debug_off" , Nrune_debug,  true);
+
+    //enable camera-only debug mode
+    if(comm->inSyncMode())
+    {
+        if(use_armor && !Narmor_debug)
+        {
+            armor_en.request.use_judge_color = false;
+            armor_en.request.enable = true;
+            armor_ctrl.call(armor_en);
+        }
+        else if(use_rune && !Nrune_debug)
+        {
+            rune_en.request.use_judge_color = false;
+            rune_en.request.enable  = true;
+            rune_en.request.rune_mode = RUNE_UNDEFINED;
+            rune_ctrl.call(rune_en);
+        }
+    }
+
     while(ros::ok())
     {
         rune_en.request.rune_mode = comm->cmd.rune_type;
