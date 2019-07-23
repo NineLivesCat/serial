@@ -5,7 +5,7 @@
  *   NOTE: This header file is shared among
  *   robomaster computer(s) & MCU(s)
  *   =======SHOULD CHECK THE VERSION NUMBER BEFORE USE======
- *   =======VERSION: 2019.07.20=============================
+ *   =======VERSION: 2019.07.23=============================
  */
 #define UART_PROTOCOL_VERSION     0x06
 #define UART_START_BYTE           0xAA
@@ -24,6 +24,8 @@
 #define RESPONSE_OK             0xA5A5
 
 #define MIN_BULLET_SPEED           10U
+#define MIN_BULLET_SPEED_42     14.75f
+#define BULLET_SPEED_PSC_42       4.0f
 #define GIMBAL_PITCH_PSC        80.84f
 
 typedef enum
@@ -56,13 +58,23 @@ typedef enum
 
 typedef enum
 {
+    TARGET_NULL        = 0,
+    TARGET_HERO        = 1,
+    TARGET_ENGINEER    = 2,
+    TARGET_INFANTRY_3  = 3,
+    TARGET_INFANTRY_4  = 4,
+    TARGET_INFANTRY_5  = 5,
+    TARGET_FAKE        = 6,
+    TARGET_SENTRY      = 7,
+    TARGET_BASE        = 8,
     TARGET_RUNE_CENTER = 9,
     TARGET_RUNE_0      = 10,
     TARGET_RUNE_1      = 11,
     TARGET_RUNE_2      = 12,
     TARGET_RUNE_3      = 13,
     TARGET_RUNE_4      = 14,
-    TARGET_BASE        = 20
+    TARGET_RUNE_FINISH = 15,
+    TARGET_BASE_SIGDE  = 20
 };
 
 typedef struct
