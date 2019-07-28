@@ -221,6 +221,7 @@ void UartComm::sendCVdiedCmd(uint8_t txbuf[])
     header.type  = UART_TARGET_ID;
 
     uart_target_t cmd;
+    memset(&cmd, 0, sizeof(uart_target_t));
     cmd.target_num = CV_DIED_INDICATOR;
 
     uint8_t* txptr = txbuf;
@@ -453,6 +454,9 @@ void UartComm::heartbeatTxProcess(void)
         else if(comm_status == COMM_ON &&
            ros::Time::now() - CV_Heartbeat > ros::Duration(0.3))
         {
+            //sendHeartbeat(txbuf);
+            //ros::Duration(0.05).sleep();
+
             //sendCVdiedCmd(txbuf);
             //ros::Duration(0.05).sleep();
         }
