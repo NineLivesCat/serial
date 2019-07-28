@@ -434,8 +434,11 @@ void UartComm::heartbeatTxProcess(void)
     {
         if(comm_status > COMM_IDLE)
         {
+            if(ros::Time::now() - CV_Heartbeat > ros::Duration(0.3))
+                sendCVdiedCmd(txbuf);
+
             frame_err_cnt = 0; //Flush error counter
-            ros::Duration(1).sleep();
+            ros::Duration(0.05).sleep();
         }
         else if(comm_status == COMM_IDLE)
         {
@@ -450,15 +453,6 @@ void UartComm::heartbeatTxProcess(void)
                 ROS_FATAL("Required parameter not found!");
             }
             ros::Duration(0.05).sleep();
-        }
-        else if(comm_status == COMM_ON &&
-           ros::Time::now() - CV_Heartbeat > ros::Duration(0.3))
-        {
-            //sendHeartbeat(txbuf);
-            //ros::Duration(0.05).sleep();
-
-            //sendCVdiedCmd(txbuf);
-            //ros::Duration(0.05).sleep();
         }
     }
 }
