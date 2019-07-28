@@ -67,12 +67,16 @@ public:
     void toggleSyncMode(void)
     {
         sync_time = ros::Time::now();
+        ros::param::set("/serial_node/OK", false);
+
         comm_status = COMM_SYNC_0;
     }
 
     void toggleRXMode(void)
     {
         frame_err_cnt = 0;
+        ros::param::set("/serial_node/OK", true);
+
         comm_status = COMM_SEND_PARAM;
     }
 
@@ -199,7 +203,7 @@ public:
      */
     uint8_t packGimbalCmd(uint8_t txbuf[], const rm_vehicle_msgs::gimbalCmd &msg);
     void    processGimbalInfo(uint8_t rxbuf[], const bool valid);
-
+    uint8_t packCVdiedCmd(uint8_t txbuf[]);
     void    gimbalCmdCallback(const rm_vehicle_msgs::gimbalCmd::ConstPtr& msg);
 
     uint8_t packTargetInfo(uint8_t txbuf[], const rm_cv_msgs::VisualServo &msg);

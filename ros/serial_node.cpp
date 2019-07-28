@@ -26,101 +26,6 @@ using std::endl;
 using std::vector;
 
 bool use_sync;
-static bool armor_ok = false;
-static bool rune_ok  = false;
-
-void MasterCtrlProcess(ros::NodeHandle& nh, UartComm* comm)
-{
-    ros::ServiceClient armor_ctrl = nh.serviceClient<rm_vehicle_msgs::cvEnable>("/Armor_Node_Enable");
-    ros::ServiceClient rune_ctrl  = nh.serviceClient<rm_vehicle_msgs::cvEnable>("/Rune_Node_Enable");
-
-    bool use_armor, use_rune;
-    nh.param<bool>  ("/serial_node/master/use_armor", use_armor, true);
-    nh.param<bool>  ("/serial_node/master/use_rune" , use_rune , true);
-    //wait for cv nodes to start
-    while(ros::ok())
-    {
-        ros::param::get("/armor_detection_node/OK", armor_ok);
-        ros::param::get("/rune_detection_node/OK" , rune_ok);
-        if((!use_armor || armor_ok) && (!use_rune || rune_ok))
-            break;
-
-        ros::Duration(0.1).sleep();
-    }
-
-    rm_vehicle_msgs::cvEnable armor_en, rune_en;
-
-    ros::Duration(1).sleep();
-    armor_en.request.enable = false;
-    armor_ctrl.call(armor_en);
-    ros::Duration(1).sleep();
-
-    int robot_type;
-    nh.param<int>("/armor_detection_node/robot_type", robot_type, 0);
-    comm->cmd.robot_hero = robot_type == 1;
-
-    //enable no-gimbal debug mode
-    bool Narmor_debug, Nrune_debug;
-    nh.param<bool>("/armor_detection_node/debug_off", Narmor_debug, true);
-    nh.param<bool>("/rune_detection_node/debug_off" , Nrune_debug,  true);
-
-    //enable camera-only debug mode
-    if(comm->inSyncMode())
-    {
-        if(use_armor && !Narmor_debug)
-        {
-            armor_en.request.use_judge_color = false;
-            armor_en.request.enable = true;
-            armor_ctrl.call(armor_en);
-        }
-        else if(use_rune && !Nrune_debug)
-        {
-            rune_en.request.use_judge_color = false;
-            rune_en.request.enable  = true;
-            rune_en.request.rune_mode = RUNE_UNDEFINED;
-            rune_ctrl.call(rune_en);
-        }
-    }
-
-    while(ros::ok())
-    {
-        rune_en.request.rune_mode = comm->cmd.rune_type;
-        if(comm->cmd.robot_color == ROBOT_TEAM_UNDEFINED)
-        {
-            armor_en.request.use_judge_color = false;
-            rune_en. request.use_judge_color = false;
-        }
-        else
-        {
-            armor_en.request.use_judge_color = true;
-            rune_en. request.use_judge_color = true;
-            armor_en.request.target_blue = comm->cmd.robot_color == ROBOT_TEAM_RED;
-            rune_en. request.target_blue = comm->cmd.robot_color == ROBOT_TEAM_BLUE;
-        }
-
-        if(comm->cmd.switch_flag)
-        {
-            if(use_armor && comm->cmd.cv_mode == CV_MODE_ARMOR)
-            {
-                armor_en.request.enable = true;
-                rune_en.request.enable  = false;
-
-                rune_ctrl.call(rune_en);
-                armor_ctrl.call(armor_en);
-            }
-            if(use_rune && comm->cmd.cv_mode == CV_MODE_RUNE)
-            {
-                armor_en.request.enable = false;
-                rune_en.request.enable  = true;
-
-                armor_ctrl.call(armor_en);
-                rune_ctrl.call(rune_en);
-            }
-
-            comm->cmd.switch_flag = false;
-        }
-    }
-}
 
 int main(int argc, char **argv)
 {
@@ -164,7 +69,6 @@ int main(int argc, char **argv)
     //serialReadThd.detach();
 
     boost::thread heartbeatTxThd(boost::bind(&UartComm::heartbeatTxProcess, &comm));
-    boost::thread masterCtrlThd(boost::bind(&MasterCtrlProcess, nh, &comm));
 
     int rx_cnt = 0;
     while (ros::ok())
@@ -204,7 +108,9 @@ int main(int argc, char **argv)
                 if(rx_size == length)
                 {
                     if(comm.getStatus() > UartComm::COMM_SEND_PARAM)
+                    {
                         comm.processGimbalInfo(rx_buffer, true);
+                    }
                     else
                         comm.processParamResponse(rx_buffer);
                 }

@@ -206,6 +206,25 @@ uint8_t UartComm::packGimbalCmd(uint8_t txbuf[], const rm_vehicle_msgs::gimbalCm
     return len;
 }
 
+uint8_t UartComm::packCVdiedCmd(uint8_t txbuf[])
+{
+    static const uint8_t len = sizeof(uart_header_t)+sizeof(uart_gimbal_cmd_t)+sizeof(uart_crc_t);
+    uart_header_t header;
+    header.start = UART_START_BYTE;
+    header.type  = UART_GIMBAL_CMD_ID;
+
+    uart_gimbal_cmd_t cmd;
+    cmd.target_num = CV_DIED_INDICATOR;
+
+    uint8_t* txptr = txbuf;
+    memcpy(txptr, &header, sizeof(uart_header_t));
+    txptr += sizeof(uart_header_t);
+    memcpy(txptr, &cmd,   sizeof(uart_gimbal_cmd_t));
+    this->append_crc(txbuf, len);
+
+    return len;
+}
+
 void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
 {
     static const uint8_t len = sizeof(uart_header_t)+
@@ -247,14 +266,11 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
         gimbalMsg.imu_w.z = gimbal.imu_w[2];
 
         gimbalMsg.bullet_speed_17 = gimbal.bullet_speed_0 + MIN_BULLET_SPEED;
-
-        if(cmd.robot_hero)
-            gimbalMsg.bullet_speed_42 = gimbal.bullet_speed_1/BULLET_SPEED_PSC_42 + MIN_BULLET_SPEED_42;
-        else
-            gimbalMsg.bullet_speed_42 = 16.0f;
+        gimbalMsg.bullet_speed_42 = gimbal.bullet_speed_1/BULLET_SPEED_PSC_42 + MIN_BULLET_SPEED_42;
 
         RCMsg  .control_enable   = gimbal.rc_enable_cv;
         RCMsg  .cv_mode = gimbal.rc_cv_mode;
+        RCMsg.rune_mode = gimbal.rune_mode;
         //Process user input command
         cmd.reset       = gimbal.rc_reset_cv;
         cmd.robot_color = gimbal.color;
@@ -423,6 +439,15 @@ void UartComm::heartbeatTxProcess(void)
                 ROS_FATAL("Required parameter not found!");
             }
             ros::Duration(0.05).sleep();
+        }
+        else if(comm_status == COMM_ON && false)
+        {
+            static const uint8_t len = sizeof(uart_header_t)+sizeof(uart_gimbal_cmd_t)+sizeof(uart_crc_t);
+
+            uint8_t txbuf[32];
+            packCVdiedCmd(txbuf);
+            this->serial_port->write(txbuf, len);
+            last_write = ros::Time::now();
         }
     }
 }
