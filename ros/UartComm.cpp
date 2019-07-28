@@ -6,6 +6,7 @@ void UartComm::gimbalCmdCallback(const rm_vehicle_msgs::gimbalCmd::ConstPtr& msg
         sizeof(uart_gimbal_cmd_t)+sizeof(uart_crc_t);
 
     static double tx_wait_time = len * 10. * 1.1 / this->baudrate;
+    CV_Heartbeat = ros::Time::now();
 
     if(comm_status == COMM_ON)
     {
@@ -29,6 +30,7 @@ void UartComm::visualServoCallback(const rm_cv_msgs::VisualServo::ConstPtr& msg)
         sizeof(uart_target_t)+sizeof(uart_crc_t);
 
     static double tx_wait_time = len * 10. * 1.1 / this->baudrate;
+    CV_Heartbeat = ros::Time::now();
 
     if(comm_status == COMM_ON)
     {
@@ -206,23 +208,30 @@ uint8_t UartComm::packGimbalCmd(uint8_t txbuf[], const rm_vehicle_msgs::gimbalCm
     return len;
 }
 
-uint8_t UartComm::packCVdiedCmd(uint8_t txbuf[])
+void UartComm::sendCVdiedCmd(uint8_t txbuf[])
 {
-    static const uint8_t len = sizeof(uart_header_t)+sizeof(uart_gimbal_cmd_t)+sizeof(uart_crc_t);
+    if((ros::Time::now() - last_write).toSec() < 1e-4)
+        return;
+
+    static const uint8_t len = sizeof(uart_header_t)+
+      sizeof(uart_target_t)+sizeof(uart_crc_t);
+
     uart_header_t header;
     header.start = UART_START_BYTE;
-    header.type  = UART_GIMBAL_CMD_ID;
+    header.type  = UART_TARGET_ID;
 
-    uart_gimbal_cmd_t cmd;
+    uart_target_t cmd;
     cmd.target_num = CV_DIED_INDICATOR;
 
     uint8_t* txptr = txbuf;
     memcpy(txptr, &header, sizeof(uart_header_t));
     txptr += sizeof(uart_header_t);
-    memcpy(txptr, &cmd,   sizeof(uart_gimbal_cmd_t));
+    memcpy(txptr, &cmd,   sizeof(uart_target_t));
     this->append_crc(txbuf, len);
 
-    return len;
+    this->serial_port->write(txbuf, len);
+
+    last_write = ros::Time::now();
 }
 
 void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
@@ -441,14 +450,11 @@ void UartComm::heartbeatTxProcess(void)
             }
             ros::Duration(0.05).sleep();
         }
-        else if(comm_status == COMM_ON && false)
+        else if(comm_status == COMM_ON &&
+           ros::Time::now() - CV_Heartbeat > ros::Duration(0.3))
         {
-            static const uint8_t len = sizeof(uart_header_t)+sizeof(uart_gimbal_cmd_t)+sizeof(uart_crc_t);
-
-            uint8_t txbuf[32];
-            packCVdiedCmd(txbuf);
-            this->serial_port->write(txbuf, len);
-            last_write = ros::Time::now();
+            //sendCVdiedCmd(txbuf);
+            //ros::Duration(0.05).sleep();
         }
     }
 }

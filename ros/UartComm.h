@@ -203,7 +203,7 @@ public:
      */
     uint8_t packGimbalCmd(uint8_t txbuf[], const rm_vehicle_msgs::gimbalCmd &msg);
     void    processGimbalInfo(uint8_t rxbuf[], const bool valid);
-    uint8_t packCVdiedCmd(uint8_t txbuf[]);
+    void    sendCVdiedCmd(uint8_t txbuf[]);
     void    gimbalCmdCallback(const rm_vehicle_msgs::gimbalCmd::ConstPtr& msg);
 
     uint8_t packTargetInfo(uint8_t txbuf[], const rm_cv_msgs::VisualServo &msg);
@@ -225,6 +225,7 @@ private:
     uint32_t        baudrate;
 
     ros::Time last_write;
+    ros::Time CV_Heartbeat;
 
     serial::Timeout unstable_timeout;
     serial::Timeout stable_timeout;
