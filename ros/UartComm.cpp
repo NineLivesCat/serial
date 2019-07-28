@@ -270,6 +270,7 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
 
         RCMsg  .control_enable   = gimbal.rc_enable_cv;
         RCMsg  .cv_mode = gimbal.rc_cv_mode;
+        RCMsg. cv_color = gimbal.color;
         RCMsg.rune_mode = gimbal.rune_mode;
         //Process user input command
         cmd.reset       = gimbal.rc_reset_cv;
