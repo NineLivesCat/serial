@@ -282,47 +282,19 @@ void UartComm::processGimbalInfo(uint8_t rxbuf[], const bool valid = true)
         RCMsg  .cv_mode = gimbal.rc_cv_mode;
         RCMsg. cv_color = gimbal.color;
         RCMsg.rune_mode = gimbal.rune_mode;
-        //Process user input command
-        cmd.reset       = gimbal.rc_reset_cv;
-        cmd.robot_color = gimbal.color;
-        cmd.rune_type   = gimbal.rune_mode;
 
         gimbalMsg.gimbal_pitch_angle = (float)(gimbal.gimbal_pitch_angle)/GIMBAL_PITCH_PSC;
         RCMsg.rc_x      = gimbal.rc_x/128.0;
         RCMsg.rc_y      = gimbal.rc_y/128.0;
-
-        gimbalMsg.valid = valid; //bullet_speed = 0 means gimbal not initialized
-        RCMsg    .valid = valid;
-
-        if(cmd.cv_mode != gimbal.rc_cv_mode)
-        {
-            cmd.cv_mode     = gimbal.rc_cv_mode;
-            cmd.switch_flag = true;
-            last_write += ros::Duration(0.2);
-        }
-
-        if(cmd.robot_color != gimbal.color)
-        {
-            cmd.robot_color = gimbal.color;
-            cmd.switch_flag = true;
-            last_write += ros::Duration(0.2);
-        }
-
-        if(cmd.rune_type != gimbal.rune_mode)
-        {
-            cmd.rune_type   = gimbal.rune_mode;
-            cmd.switch_flag = true;
-            last_write += ros::Duration(0.2);
-        }
     }
     else
     {
-        gimbalMsg.valid = valid;
-        RCMsg    .valid = valid;
-
         gimbalMsg.header.stamp = ros::Time::now();
         RCMsg    .header.stamp = ros::Time::now();
     }
+
+    gimbalMsg.valid = valid;
+    RCMsg    .valid = valid;
 
     gimbalInfo_pub.publish(gimbalMsg);
     RC_pub.publish(RCMsg);

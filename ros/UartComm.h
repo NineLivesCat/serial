@@ -10,18 +10,6 @@
 #include "rm_vehicle_msgs/RC.h"
 
 //#define USE_IDLE_DETECTION
-
-struct User_Command
-{
-    bool          reset;
-    uint8_t     cv_mode;
-    bool    switch_flag;
-
-    bool     robot_hero;
-    uint8_t robot_color; //0-undefined, 1-red,   2-blue
-    uint8_t   rune_type; //0-undefined, 1-small, 2-big
-};
-
 class CommBase
 {
 public:
@@ -30,10 +18,6 @@ public:
         sync_time   = ros::Time::now();
         comm_status = COMM_UNINIT;
         sync_error  = 0;
-
-        cmd.cv_mode     = CV_MODE_DUMMY;
-        cmd.robot_color = ROBOT_TEAM_UNDEFINED;
-        cmd.rune_type   = RUNE_UNDEFINED;
         frame_err_cnt   = 0;
     }
 
@@ -84,8 +68,6 @@ public:
     {
         return comm_status;
     }
-
-    User_Command cmd;
 
 protected:
     bool verify_crc(uint8_t rxbuf[], const uint8_t length)
